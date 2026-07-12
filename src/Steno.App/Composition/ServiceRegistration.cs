@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Steno.App.Updates;
 using Steno.App.ViewModels;
 using Steno.Core.Abstractions;
 using Steno.Core.Export;
@@ -40,6 +41,11 @@ public static class ServiceRegistration
         services.AddSingleton<ITranscriptExporter, JsonTranscriptExporter>();
 
         services.AddSingleton<IUserSettingsStore, JsonUserSettingsStore>();
+
+        // Updates: GitHub Releases is the feed, an MSI is the payload (ADR 0018).
+        services.AddSingleton<IUpdateChecker, GitHubUpdateChecker>();
+        services.AddSingleton<IUpdateInstaller, MsiUpdateInstaller>();
+        services.AddSingleton<UpdateViewModel>();
 
         services.AddSingleton<SetupViewModel>();
         services.AddSingleton<MainViewModel>();

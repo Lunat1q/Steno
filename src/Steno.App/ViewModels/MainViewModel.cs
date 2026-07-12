@@ -22,7 +22,8 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly DispatcherTimer _clock;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSetupVisible), nameof(IsTranscriptVisible), nameof(IsReviewing))]
+    [NotifyPropertyChangedFor(nameof(IsSetupVisible), nameof(IsTranscriptVisible), nameof(IsReviewing),
+        nameof(CanOfferUpdate))]
     [NotifyCanExecuteChangedFor(nameof(StartCommand), nameof(StopCommand), nameof(TogglePauseCommand))]
     private bool _isSessionActive;
 
@@ -40,7 +41,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// or closing the window would destroy it, so each of those has to ask first.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsReviewing))]
+    [NotifyPropertyChangedFor(nameof(IsReviewing), nameof(CanOfferUpdate))]
     private bool _hasUnsavedTranscript;
 
     /// <summary>Set when a destructive action is pending and we are waiting for a yes/no.</summary>
@@ -59,12 +60,14 @@ public sealed partial class MainViewModel : ObservableObject
 
     public MainViewModel(
         SetupViewModel setup,
+        UpdateViewModel update,
         ITranscriptionSession session,
         ITranscriptionBackend backend,
         IEnumerable<ITranscriptExporter> exporters,
         ILogger<MainViewModel> logger)
     {
         Setup = setup;
+        Update = update;
         _session = session;
         _backend = backend;
         _logger = logger;
@@ -82,9 +85,23 @@ public sealed partial class MainViewModel : ObservableObject
         _session.StateChanged += state => OnUiThread(() => OnStateChanged(state));
         _session.LevelChanged += (channel, level) => OnUiThread(() => SetLevel(channel, level));
         _session.Faulted += ex => OnUiThread(() => ErrorMessage = Explain(ex));
+
+        // The banner's visibility depends on session state as well as the update itself.
+        Update.PropertyChanged += (_, _) => OnPropertyChanged(nameof(CanOfferUpdate));
+
+        _ = Update.CheckInBackgroundAsync();
     }
 
     public SetupViewModel Setup { get; }
+
+    public UpdateViewModel Update { get; }
+
+    /// <summary>
+    /// Installing an update quits the app, so the offer is only shown when there is nothing to
+    /// lose: no call running, no unsaved transcript. Interrupting a live call to install a patch
+    /// would be the single rudest thing this app could do.
+    /// </summary>
+    public bool CanOfferUpdate => Update.IsOffered && !IsSessionActive && !HasUnsavedTranscript;
 
     public IReadOnlyList<ITranscriptExporter> Exporters { get; }
 

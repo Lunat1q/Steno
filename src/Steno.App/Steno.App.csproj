@@ -35,4 +35,8 @@
     <ProjectReference Include="..\Steno.Core\Steno.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Steno.App.Tests" />
+  </ItemGroup>
+
 </Project>

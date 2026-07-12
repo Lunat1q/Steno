@@ -29,6 +29,40 @@
             </StackPanel>
         </Grid>
 
+        <!-- An update offer, never a demand. Hidden entirely during a call: installing quits the
+             app, and interrupting a live transcription to patch it would be unforgivable. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12"
+                Background="{DynamicResource YouSoft}" IsVisible="{Binding CanOfferUpdate}">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Update.Headline}" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource Text}" />
+                    <TextBlock Classes="hint" Text="Steno will close, install, and you can reopen it." />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Classes="save" Content="Update now" Command="{Binding Update.InstallCommand}" />
+                    <Button Classes="quiet" Content="Not now" Command="{Binding Update.DismissCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Downloading it. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12"
+                Background="{DynamicResource YouSoft}" IsVisible="{Binding Update.IsInstalling}">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Downloading the update…" FontSize="13" Foreground="{DynamicResource Text}" />
+                <ProgressBar Value="{Binding Update.DownloadPercent}" Maximum="100" Height="5"
+                             Foreground="{DynamicResource You}"
+                             Background="{DynamicResource SurfaceRaised}" CornerRadius="3" />
+            </StackPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12" Background="#2C1618"
+                IsVisible="{Binding Update.Error, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="{Binding Update.Error}" TextWrapping="Wrap" FontSize="13"
+                       Foreground="{DynamicResource Text}" />
+        </Border>
+
         <!-- Errors say what to do next, not what threw. -->
         <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12"
                 Background="#2C1618" IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}">

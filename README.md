@@ -23,6 +23,10 @@ Per-user install, no admin, no .NET needed on the target machine. A true single 
 possible — whisper.cpp's native libraries have to sit in a `runtimes/` folder the loader can
 find ([ADR 0017](docs/decisions/0017-packaging.md)).
 
+Steno checks GitHub Releases for updates on launch, offers them (never during a call), and
+installs on your say-so — verifying the published SHA-256 before it runs anything
+([ADR 0018](docs/decisions/0018-updates.md)).
+
 ## Or run it from source
 
 ```
