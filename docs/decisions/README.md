@@ -21,3 +21,4 @@ code alone never explains *why not the other thing*.
 | [0014](0014-cold-start-and-capture-latency.md) | Warm the GPU up before the call; trim the capture buffer | The remaining lag was Vulkan's first-inference cost being swallowed by back-pressure — 4.9 s → 0.7 s |
 | [0015](0015-vad-deafness.md) | The noise floor may only learn from quiet frames, and is hard-capped | Fricatives were teaching the VAD that speech was noise; it went permanently deaf after ~20 s |
 | [0016](0016-remembering-choices.md) | Remember the last setup in %LOCALAPPDATA%/Steno/settings.json | The app asked the same questions every launch and ignored the same answers |
+| [0017](0017-packaging.md) | MSI installer (WiX, per-user, TiQ Studio); no true single exe | whisper.cpp's natives must live in a runtimes/ folder — bundling them yields an exe that dies on Start |

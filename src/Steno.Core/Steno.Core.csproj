@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- One version for the packages and for the native files we embed from them. -->
+    <WhisperVersion>1.9.1</WhisperVersion>
   </PropertyGroup>
+
 
   <ItemGroup>
     <InternalsVisibleTo Include="Steno.Core.Tests" />
@@ -16,11 +19,11 @@
     <!-- WASAPI capture + loopback (Platform/Windows only) -->
     <PackageReference Include="NAudio" Version="2.3.0" />
     <!-- Managed binding over ggml-org/whisper.cpp; Runtime ships the native whisper.cpp libs -->
-    <PackageReference Include="Whisper.net" Version="1.9.1" />
-    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
+    <PackageReference Include="Whisper.net" Version="$(WhisperVersion)" />
+    <PackageReference Include="Whisper.net.Runtime" Version="$(WhisperVersion)" />
     <!-- GPU backend. Vulkan, not CUDA: see ADR 0010 — the CUDA build hard-crashes on Blackwell,
          and Vulkan covers NVIDIA + AMD + Intel from one package. Worth ~65× over CPU. -->
-    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="$(WhisperVersion)" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
   </ItemGroup>
 

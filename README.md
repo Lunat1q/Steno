@@ -13,7 +13,17 @@ Turn it on before a call. It listens to **two streams at once**:
 Because the streams are physically separate, who-said-what is exact. No diarization
 model, no guessing (see [ADR 0002](docs/decisions/0002-per-channel-speaker-attribution.md)).
 
-## Run it
+## Install it
+
+```
+installer/build.ps1        # -> artifacts/Steno-Setup.msi  (53 MB)
+```
+
+Per-user install, no admin, no .NET needed on the target machine. A true single exe is not
+possible — whisper.cpp's native libraries have to sit in a `runtimes/` folder the loader can
+find ([ADR 0017](docs/decisions/0017-packaging.md)).
+
+## Or run it from source
 
 ```
 dotnet run --project src/Steno.App

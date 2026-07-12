@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Steno"
+           Manufacturer="TiQ Studio"
+           Version="$(var.Version)"
+           UpgradeCode="8f3d6a41-2b7c-4e59-9f0a-6c1d2e8b7a44"
+           Scope="perUser"
+           Compressed="yes">
+
+    <!--
+      perUser, not perMachine: Steno needs no admin rights, writes its models and settings under
+      %LOCALAPPDATA% anyway, and asking for a UAC prompt to install a transcription app is a
+      cost with no benefit. It also means no elevation on upgrade.
+    -->
+
+    <SummaryInformation Description="Live per-speaker call transcription, running locally on whisper.cpp" />
+
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of Steno is already installed." />
+
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="StenoIcon" SourceFile="$(var.IconFile)" />
+    <Property Id="ARPPRODUCTICON" Value="StenoIcon" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/Lunat1q/Steno" />
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.InstallerDir)\License.rtf" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="Steno" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ShortcutFolder" Name="Steno" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Steno" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <!--
+      Harvests the publish folder as-is. The runtimes/ subfolders are NOT optional: Whisper.net
+      locates whisper.cpp's native libraries by directory, so flattening this layout breaks
+      transcription at the moment the user presses Start. ADR 0017.
+    -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**" />
+    </ComponentGroup>
+
+    <Component Id="StartMenuShortcut" Directory="ShortcutFolder" Guid="c4e1f2a7-9d38-4b6e-8a15-3f7c9e2d1b05">
+      <Shortcut Id="StenoShortcut"
+                Name="Steno"
+                Description="Live per-speaker call transcription"
+                Target="[INSTALLFOLDER]Steno.App.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="StenoIcon" />
+      <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\TiQ Studio\Steno" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+  </Package>
+</Wix>
