@@ -2,6 +2,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using Steno.Core.Abstractions;
 using Steno.Core.Audio;
+using Steno.Core.Recording;
 using Steno.Core.Segmentation;
 using Steno.Core.Transcription;
 
@@ -21,13 +22,6 @@ public sealed class ChannelPipeline : IAsyncDisposable
 
     /// <summary>20 ms frames × 5 ≈ 10 level updates a second. Enough to look live, cheap to render.</summary>
     private const int LevelReportEveryNthFrame = 5;
-
-    /// <summary>
-    /// Below this RMS an utterance is hiss, not speech. Speech sits at 0.05–0.3 even from a quiet
-    /// talker, so this is a wide margin — it exists to keep silence away from whisper, which
-    /// answers silence with confident nonsense (ADR 0019).
-    /// </summary>
-    private const float MinSpeechRms = 0.004f;
 
     private readonly SpeakerChannel _channel;
     private readonly IAudioCaptureSource _capture;
@@ -128,11 +122,15 @@ public sealed class ChannelPipeline : IAsyncDisposable
         ReportLevel(frame);
 
         if (_paused)
-            return;
+            return; // paused audio is neither transcribed NOR recorded — see ADR 0011
 
+        Recorder?.Write(_channel, frame);
         _crossTalkGate?.Observe(_channel, frame);
         _segmenter.Push(frame);
     }
+
+    /// <summary>Writes this channel into the call recording, when one is being made.</summary>
+    public ICallRecorder? Recorder { get; init; }
 
     /// <summary>
     /// Feeds the UI's level meter. Every 20 ms would be 50 UI updates/sec per channel for no
@@ -209,8 +207,8 @@ public sealed class ChannelPipeline : IAsyncDisposable
     private async Task TranscribeAsync(Utterance utterance, CancellationToken cancellationToken)
     {
         // Cheapest filter first: audio this quiet is not a sentence, and whisper answers silence
-        // with invented subtitle furniture. Skipping it also saves a GPU pass.
-        if (EnergyVoiceActivityDetector.Rms(utterance.Samples.Span) < MinSpeechRms)
+        // with invented subtitle furniture. Skipping it also saves a GPU pass (ADR 0019).
+        if (!TranscriptionPolicy.IsWorthTranscribing(utterance.Samples.Span))
         {
             _logger.LogDebug("Dropped near-silent utterance at {Start}", utterance.Start);
             return;
@@ -222,15 +220,9 @@ public sealed class ChannelPipeline : IAsyncDisposable
             .TranscribeAsync(utterance.Samples, isDraft, cancellationToken)
             .ConfigureAwait(false);
 
-        if (result.IsEmpty || result.NoSpeechProbability > _options.NoSpeechThreshold)
-            return;
-
-        // whisper.cpp hallucinates YouTube subtitle boilerplate over noise — and does it with a
-        // no-speech probability of 0.000 and 0.85 confidence, so no threshold can catch it.
-        // Only the content gives it away (ADR 0019).
-        if (HallucinationFilter.IsHallucination(result.Text))
+        if (!TranscriptionPolicy.IsUsable(result, _options.NoSpeechThreshold))
         {
-            _logger.LogDebug("Dropped hallucinated text on {Channel}: {Text}", _channel, result.Text);
+            _logger.LogDebug("Dropped unusable result on {Channel}: {Text}", _channel, result.Text);
             return;
         }
 

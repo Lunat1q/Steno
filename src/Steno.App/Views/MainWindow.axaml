@@ -81,6 +81,19 @@
             <views:SetupView IsVisible="{Binding IsSetupVisible}" />
             <views:LiveView IsVisible="{Binding IsTranscriptVisible}" />
 
+            <!-- Transcribing a file: this can take a while, so show how far along it is. -->
+            <Border Classes="card" IsVisible="{Binding IsTranscribingFile}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="380">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="{Binding StatusLine}" Classes="step" HorizontalAlignment="Center" />
+                    <ProgressBar Value="{Binding FileProgress}" Maximum="100" Height="6"
+                                 Foreground="{DynamicResource You}"
+                                 Background="{DynamicResource SurfaceRaised}" CornerRadius="3" />
+                    <TextBlock Classes="hint" HorizontalAlignment="Center" TextAlignment="Center"
+                               Text="Recordings made by Steno keep both speakers on separate channels, so everyone stays labelled." />
+                </StackPanel>
+            </Border>
+
             <!-- Model download / warm-up. Blocks nothing but the setup card it replaces. -->
             <Border Classes="card" IsVisible="{Binding IsBusy}"
                     VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="380">

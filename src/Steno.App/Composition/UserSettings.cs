@@ -16,6 +16,7 @@ public sealed record UserSettings
     public bool? TranslateToEnglish { get; init; }
     public bool? ShowLiveDraft { get; init; }
     public bool? SuppressEcho { get; init; }
+    public bool? RecordAudio { get; init; }
 }
 
 public interface IUserSettingsStore

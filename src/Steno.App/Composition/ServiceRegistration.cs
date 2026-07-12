@@ -5,6 +5,7 @@ using Steno.App.ViewModels;
 using Steno.Core.Abstractions;
 using Steno.Core.Export;
 using Steno.Core.Platform.Windows;
+using Steno.Core.Recording;
 using Steno.Core.Session;
 using Steno.Core.Whisper;
 
@@ -36,6 +37,9 @@ public static class ServiceRegistration
         services.AddSingleton<ITranscriptionBackend>(sp => sp.GetRequiredService<WhisperTranscriberFactory>());
 
         services.AddSingleton<ITranscriptionSession, TranscriptionSession>();
+
+        // Offline transcription of a recorded call (ADR 0020).
+        services.AddSingleton<IRecordingTranscriber, RecordingTranscriber>();
 
         services.AddSingleton<ITranscriptExporter, MarkdownTranscriptExporter>();
         services.AddSingleton<ITranscriptExporter, JsonTranscriptExporter>();

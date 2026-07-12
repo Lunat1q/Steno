@@ -23,4 +23,13 @@ public sealed record SessionOptions
     /// loudspeakers (ADR 0006). Harmless on a headset; essential without one.
     /// </summary>
     public bool SuppressCrossTalk { get; init; } = true;
+
+    /// <summary>
+    /// Save the call as a stereo WAV (left = you, right = them) so it can be re-transcribed later
+    /// with speaker attribution intact. Audio recorded while paused is never written (ADR 0020).
+    /// </summary>
+    public bool RecordAudio { get; init; }
+
+    /// <summary>Where recordings go. Defaults to Documents/Steno/recordings.</summary>
+    public string? RecordingDirectory { get; init; }
 }

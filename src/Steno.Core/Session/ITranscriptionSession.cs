@@ -26,6 +26,9 @@ public interface ITranscriptionSession : IAsyncDisposable
 
     DateTimeOffset? StartedAt { get; }
 
+    /// <summary>Where the call was recorded, when recording was on. Null otherwise.</summary>
+    string? RecordingPath { get; }
+
     /// <summary>Time-ordered across both channels.</summary>
     IReadOnlyList<TranscriptEntry> Entries { get; }
 

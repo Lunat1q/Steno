@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Steno.Core.Abstractions;
 using Steno.Core.Audio;
+using Steno.Core.Recording;
 using Steno.Core.Segmentation;
 
 namespace Steno.Core.Session;
@@ -25,6 +26,7 @@ public sealed class TranscriptionSession : ITranscriptionSession
     private readonly object _sync = new();
 
     private CrossTalkGate? _crossTalkGate;
+    private ICallRecorder? _recorder;
     private SessionState _state = SessionState.Idle;
 
     public TranscriptionSession(
@@ -41,6 +43,8 @@ public sealed class TranscriptionSession : ITranscriptionSession
     public SessionState State => _state;
 
     public DateTimeOffset? StartedAt { get; private set; }
+
+    public string? RecordingPath { get; private set; }
 
     public IReadOnlyList<TranscriptEntry> Entries
     {
@@ -82,6 +86,9 @@ public sealed class TranscriptionSession : ITranscriptionSession
                 : null;
 
             var speakerResolver = new ChannelSpeakerResolver(options.LocalSpeakerName, options.RemoteSpeakerName);
+
+            _recorder = options.RecordAudio ? CreateRecorder(options) : null;
+            RecordingPath = _recorder?.Path;
 
             if (options.MicrophoneDevice is not null)
                 _pipelines.Add(await BuildPipelineAsync(
@@ -147,6 +154,24 @@ public sealed class TranscriptionSession : ITranscriptionSession
         SetState(SessionState.Idle);
     }
 
+    /// <summary>One stereo file for the whole call: left = you, right = them (ADR 0020).</summary>
+    private ICallRecorder CreateRecorder(SessionOptions options)
+    {
+        var directory = options.RecordingDirectory ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "Steno",
+            "recordings");
+
+        var path = Path.Combine(directory, $"call-{DateTime.Now:yyyy-MM-dd-HHmm-ss}.wav");
+
+        _logger.LogInformation("Recording the call to {Path}", path);
+
+        return new StereoCallRecorder(
+            path,
+            hasLocal: options.MicrophoneDevice is not null,
+            hasRemote: options.LoopbackDevice is not null);
+    }
+
     private async Task<ChannelPipeline> BuildPipelineAsync(
         SpeakerChannel channel,
         AudioDevice device,
@@ -164,7 +189,10 @@ public sealed class TranscriptionSession : ITranscriptionSession
             speakerResolver,
             options.Transcription,
             _crossTalkGate,
-            _loggerFactory.CreateLogger($"Pipeline.{channel}"));
+            _loggerFactory.CreateLogger($"Pipeline.{channel}"))
+        {
+            Recorder = _recorder
+        };
 
         pipeline.EntryProduced += OnEntryProduced;
         pipeline.EntryUpdated += OnEntryUpdated;
@@ -251,6 +279,11 @@ public sealed class TranscriptionSession : ITranscriptionSession
 
         _pipelines.Clear();
         _crossTalkGate?.Reset();
+
+        // Closed last: the WAV header carries the length, so a recording that is never disposed
+        // is a recording no player will open.
+        _recorder?.Dispose();
+        _recorder = null;
     }
 
     private void SetState(SessionState state)

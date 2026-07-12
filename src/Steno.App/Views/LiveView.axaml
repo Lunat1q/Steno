@@ -79,9 +79,14 @@
                 Background="{DynamicResource YouSoft}"
                 IsVisible="{Binding IsReviewing}">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="13" TextWrapping="Wrap"
-                           Foreground="{DynamicResource Text}"
-                           Text="Call ended. This transcript only exists here until you save it." />
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock FontSize="13" TextWrapping="Wrap" Foreground="{DynamicResource Text}"
+                               Text="Call ended. This transcript only exists here until you save it." />
+                    <!-- The audio, unlike the transcript, is already on disk. Say where. -->
+                    <TextBlock Classes="hint" TextWrapping="Wrap"
+                               IsVisible="{Binding RecordingPath, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               Text="{Binding RecordingPath, StringFormat='Audio saved to {0}'}" />
+                </StackPanel>
                 <Button Grid.Column="1" Classes="save" Content="Save transcript" Click="OnExportClick" />
             </Grid>
         </Border>

@@ -24,3 +24,4 @@ code alone never explains *why not the other thing*.
 | [0017](0017-packaging.md) | MSI installer (WiX, per-user, TiQ Studio); no true single exe | whisper.cpp's natives must live in a runtimes/ folder — bundling them yields an exe that dies on Start |
 | [0018](0018-updates.md) | Update from GitHub Releases; verify SHA-256 before running the MSI | The releases API is already the source of truth, and the payload is executable |
 | [0019](0019-hallucinated-subtitles.md) | Energy gate + content blocklist for whisper's invented subtitles | On pure silence whisper says "Продолжение следует..." at 0.000 no-speech and 0.85 confidence — no threshold can catch it |
+| [0020](0020-recording-and-offline.md) | Record as one stereo WAV (left=you, right=them); offline transcription reuses the live rules | The channel IS the speaker, so a recording re-transcribes with attribution intact and needs no diarization |

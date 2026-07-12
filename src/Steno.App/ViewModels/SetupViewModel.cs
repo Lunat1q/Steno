@@ -40,6 +40,9 @@ public sealed partial class SetupViewModel : ObservableObject
     [ObservableProperty] private bool _translateToEnglish;
     [ObservableProperty] private bool _suppressEcho = true;
 
+    /// <summary>Keep the audio, so the call can be re-transcribed later — with a better model, say.</summary>
+    [ObservableProperty] private bool _recordAudio;
+
     /// <summary>
     /// On by default: this is what makes the app feel live (text within ~600 ms instead of
     /// after the sentence ends). It is only affordable on a GPU — on CPU the pipeline simply
@@ -87,6 +90,7 @@ public sealed partial class SetupViewModel : ObservableObject
         TranslateToEnglish = saved.TranslateToEnglish ?? TranslateToEnglish;
         ShowLiveDraft = saved.ShowLiveDraft ?? ShowLiveDraft;
         SuppressEcho = saved.SuppressEcho ?? SuppressEcho;
+        RecordAudio = saved.RecordAudio ?? RecordAudio;
     }
 
     /// <summary>Every choice is saved the moment it is made — there is no Apply button to forget.</summary>
@@ -105,7 +109,8 @@ public sealed partial class SetupViewModel : ObservableObject
             SpeakerId = Speaker?.Id,
             TranslateToEnglish = TranslateToEnglish,
             ShowLiveDraft = ShowLiveDraft,
-            SuppressEcho = SuppressEcho
+            SuppressEcho = SuppressEcho,
+            RecordAudio = RecordAudio
         });
     }
 
@@ -158,6 +163,7 @@ public sealed partial class SetupViewModel : ObservableObject
         MicrophoneDevice = Microphone,
         LoopbackDevice = Speaker,
         SuppressCrossTalk = SuppressEcho,
+        RecordAudio = RecordAudio,
         Transcription = new TranscriptionOptions
         {
             Model = Quality.Model,

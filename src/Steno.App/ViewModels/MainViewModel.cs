@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Steno.Core.Abstractions;
 using Steno.Core.Export;
+using Steno.Core.Recording;
 using Steno.Core.Session;
 
 namespace Steno.App.ViewModels;
@@ -17,6 +18,7 @@ namespace Steno.App.ViewModels;
 public sealed partial class MainViewModel : ObservableObject
 {
     private readonly ITranscriptionSession _session;
+    private readonly IRecordingTranscriber _recordings;
     private readonly ITranscriptionBackend _backend;
     private readonly ILogger<MainViewModel> _logger;
     private readonly DispatcherTimer _clock;
@@ -55,6 +57,15 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _elapsed = "00:00";
     [ObservableProperty] private string _backendLabel = string.Empty;
 
+    /// <summary>Where the call audio was saved, once it has been. Shown so the file is findable.</summary>
+    [ObservableProperty] private string? _recordingPath;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSetupVisible), nameof(IsReviewing))]
+    private bool _isTranscribingFile;
+
+    [ObservableProperty] private double _fileProgress;
+
     /// <summary>True once we know the model fell back to CPU, where "live" is not achievable.</summary>
     [ObservableProperty] private bool _isSlowBackend;
 
@@ -62,6 +73,7 @@ public sealed partial class MainViewModel : ObservableObject
         SetupViewModel setup,
         UpdateViewModel update,
         ITranscriptionSession session,
+        IRecordingTranscriber recordings,
         ITranscriptionBackend backend,
         IEnumerable<ITranscriptExporter> exporters,
         ILogger<MainViewModel> logger)
@@ -69,6 +81,7 @@ public sealed partial class MainViewModel : ObservableObject
         Setup = setup;
         Update = update;
         _session = session;
+        _recordings = recordings;
         _backend = backend;
         _logger = logger;
         Exporters = exporters.ToList();
@@ -109,13 +122,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ObservableCollection<TranscriptEntryViewModel> Entries { get; } = [];
 
-    public bool IsSetupVisible => !IsSessionActive && !IsBusy && !HasEntries;
+    public bool IsSetupVisible => !IsSessionActive && !IsBusy && !HasEntries && !IsTranscribingFile;
 
     /// <summary>Shown while the call runs *and* after it stops — stopping must never wipe the screen.</summary>
     public bool IsTranscriptVisible => IsSessionActive || HasEntries;
 
     /// <summary>Call over, transcript still here. The moment to offer a save, not to throw it away.</summary>
-    public bool IsReviewing => !IsSessionActive && !IsBusy && HasEntries;
+    public bool IsReviewing => !IsSessionActive && !IsBusy && !IsTranscribingFile && HasEntries;
 
     public bool HasEntries => Entries.Count > 0;
 
@@ -175,6 +188,9 @@ public sealed partial class MainViewModel : ObservableObject
         }
         finally
         {
+            // Only meaningful once the recorder has closed the file (the WAV header needs the length).
+            RecordingPath = _session.RecordingPath;
+
             _clock.Stop();
             IsPaused = false;
             YourLevel = 0;
@@ -206,6 +222,55 @@ public sealed partial class MainViewModel : ObservableObject
         HasUnsavedTranscript = false;
         IsConfirmingDiscard = false;
         StatusLine = $"Saved to {Path.GetFileName(path)}";
+    }
+
+    /// <summary>
+    /// Transcribes a recording made earlier. A stereo file recorded by Steno still has you on the
+    /// left and them on the right, so the speaker labels survive a round trip through disk.
+    /// </summary>
+    public async Task TranscribeRecordingAsync(string path)
+    {
+        if (HasUnsavedTranscript)
+        {
+            IsConfirmingDiscard = true;
+            return;
+        }
+
+        IsTranscribingFile = true;
+        ErrorMessage = null;
+        FileProgress = 0;
+        StatusLine = $"Transcribing {Path.GetFileName(path)}…";
+
+        try
+        {
+            ClearTranscript();
+
+            var entries = await _recordings.TranscribeAsync(
+                path,
+                Setup.ToSessionOptions(),
+                new Progress<double>(value => FileProgress = value * 100));
+
+            foreach (var entry in entries)
+                AddEntry(entry);
+
+            // Everything just produced is unsaved, exactly as if it had been spoken live.
+            HasUnsavedTranscript = entries.Count > 0;
+
+            StatusLine = entries.Count > 0
+                ? $"{entries.Count} lines from {Path.GetFileName(path)}"
+                : "Nothing recognisable in that recording.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Offline transcription failed");
+            ErrorMessage = $"Could not transcribe that file: {ex.Message}";
+        }
+        finally
+        {
+            IsTranscribingFile = false;
+            OnPropertyChanged(nameof(IsSetupVisible));
+            OnPropertyChanged(nameof(IsReviewing));
+        }
     }
 
     /// <summary>The user chose to throw the transcript away after being asked. Their call.</summary>
