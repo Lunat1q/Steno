@@ -38,14 +38,16 @@ if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
 }
 
 $tag = "v$Version"
-$args = @("release", "create", $tag, $msi, $sha,
-          "--title", "Steno $Version",
-          "--notes", ($Notes ? $Notes : "Steno $Version"))
 
-if ($Draft) { $args += "--draft" }
+# Not $args: that is a PowerShell automatic variable, and writing to it is a trap.
+$ghArgs = @("release", "create", $tag, $msi, $sha,
+            "--title", "Steno $Version",
+            "--notes", ($Notes ? $Notes : "Steno $Version"))
+
+if ($Draft) { $ghArgs += "--draft" }
 
 Write-Host "Publishing $tag …" -ForegroundColor Cyan
-gh @args
+gh @ghArgs
 if ($LASTEXITCODE -ne 0) { throw "gh release create failed" }
 
 Write-Host "Released $tag. Installed copies will offer it on next launch." -ForegroundColor Green
