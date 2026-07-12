@@ -1,0 +1,64 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Steno.App.ViewModels"
+        xmlns:views="using:Steno.App.Views"
+        x:Class="Steno.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Steno"
+        Icon="/Assets/icon.ico"
+        Width="880" MinWidth="620" MinHeight="480"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource Bg}">
+
+    <DockPanel Margin="20">
+
+        <!-- Header: name, and what the app is doing right now. Nothing else. -->
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="2,0,2,16">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <TextBlock Text="Steno" FontSize="18" FontWeight="Bold"
+                           Foreground="{DynamicResource Text}" />
+                <TextBlock Text="live call transcription, on this machine only" Classes="meta"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Ellipse Width="7" Height="7" Fill="{DynamicResource Go}"
+                         IsVisible="{Binding IsSessionActive}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding StatusLine}" Classes="meta" VerticalAlignment="Center" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Errors say what to do next, not what threw. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12"
+                Background="#2C1618" IsVisible="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"
+                       Foreground="{DynamicResource Text}" FontSize="13" />
+        </Border>
+
+        <!-- No GPU means multi-second delays whatever we do. Better to say it than to let the
+             user conclude the app is broken. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12" IsVisible="{Binding IsSlowBackend}">
+            <TextBlock TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource Text}"
+                       Text="No GPU found, so speech recognition is running on the CPU — expect several seconds of delay. Switch quality to Fast to reduce it." />
+        </Border>
+
+        <Panel>
+            <views:SetupView IsVisible="{Binding IsSetupVisible}" />
+            <views:LiveView IsVisible="{Binding IsTranscriptVisible}" />
+
+            <!-- Model download / warm-up. Blocks nothing but the setup card it replaces. -->
+            <Border Classes="card" IsVisible="{Binding IsBusy}"
+                    VerticalAlignment="Center" HorizontalAlignment="Center" MinWidth="380">
+                <StackPanel Spacing="14">
+                    <TextBlock Text="{Binding StatusLine}" Classes="step" HorizontalAlignment="Center" />
+                    <ProgressBar Value="{Binding DownloadPercent}" Maximum="100" Height="6"
+                                 Foreground="{DynamicResource You}"
+                                 Background="{DynamicResource SurfaceRaised}" CornerRadius="3" />
+                    <TextBlock Classes="hint" HorizontalAlignment="Center" TextAlignment="Center"
+                               Text="The speech model is downloaded once and then kept on your machine." />
+                </StackPanel>
+            </Border>
+        </Panel>
+    </DockPanel>
+</Window>

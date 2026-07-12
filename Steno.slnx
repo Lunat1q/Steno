@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Steno.Core/Steno.Core.csproj" />
+    <Project Path="src/Steno.App/Steno.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Steno.Core.Tests/Steno.Core.Tests.csproj" />
+  </Folder>
+</Solution>

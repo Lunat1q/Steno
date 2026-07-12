@@ -1,0 +1,50 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+*.DotSettings.user
+
+## .NET
+project.lock.json
+project.fragment.lock.json
+*.nupkg
+*.snupkg
+BenchmarkDotNet.Artifacts/
+
+## Test results
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+
+## whisper.cpp GGML models — downloaded at runtime to %LOCALAPPDATA%/Steno/models.
+## Never commit these: the smallest is 75 MB and large-v3 is ~3 GB.
+*.bin
+*.bin.part
+models/
+
+## Transcripts. Call contents are private by default — do not let an export land in a commit.
+*.transcript.md
+*.transcript.json
+transcripts/
+
+## OS
+[Tt]humbs.db
+Desktop.ini
+.DS_Store

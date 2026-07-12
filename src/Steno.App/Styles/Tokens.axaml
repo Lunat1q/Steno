@@ -1,0 +1,49 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      One palette, defined once. Two rules it exists to enforce:
+
+      1. Each speaker owns a colour, everywhere. "You" is always sky, "Them" is always amber —
+         in the meter, the bubble, the label. The user learns the mapping in one glance and
+         never re-reads a name tag. Blue/amber is also the colour-blind-safe pair, which
+         matters because the colour *is* the speaker.
+      2. Everything else is grey. A transcript is a reading surface; the only things allowed
+         to be colourful are the two voices and the one button you press next.
+    -->
+
+    <!-- Surfaces: near-black, low contrast steps. Long calls = long staring. -->
+    <Color x:Key="BgColor">#0E1015</Color>
+    <Color x:Key="SurfaceColor">#161A22</Color>
+    <Color x:Key="SurfaceRaisedColor">#1E232D</Color>
+    <Color x:Key="BorderColor">#2B313D</Color>
+
+    <SolidColorBrush x:Key="Bg" Color="{StaticResource BgColor}" />
+    <SolidColorBrush x:Key="Surface" Color="{StaticResource SurfaceColor}" />
+    <SolidColorBrush x:Key="SurfaceRaised" Color="{StaticResource SurfaceRaisedColor}" />
+    <SolidColorBrush x:Key="Border" Color="{StaticResource BorderColor}" />
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="Text" Color="#E8EAEE" />
+    <SolidColorBrush x:Key="TextMuted" Color="#8C94A3" />
+    <SolidColorBrush x:Key="TextFaint" Color="#5D6674" />
+
+    <!-- The two voices -->
+    <SolidColorBrush x:Key="You" Color="#38BDF8" />
+    <SolidColorBrush x:Key="YouSoft" Color="#153B52" />
+    <SolidColorBrush x:Key="Them" Color="#FBA94C" />
+    <SolidColorBrush x:Key="ThemSoft" Color="#3A2B14" />
+
+    <!-- Actions -->
+    <SolidColorBrush x:Key="Go" Color="#2FBF71" />
+    <SolidColorBrush x:Key="GoHover" Color="#38D882" />
+    <SolidColorBrush x:Key="Stop" Color="#E5484D" />
+    <SolidColorBrush x:Key="Warn" Color="#F5C451" />
+    <SolidColorBrush x:Key="WarnSoft" Color="#2E2716" />
+
+    <!-- Geometry -->
+    <CornerRadius x:Key="RadiusCard">14</CornerRadius>
+    <CornerRadius x:Key="RadiusControl">8</CornerRadius>
+    <CornerRadius x:Key="RadiusPill">999</CornerRadius>
+
+</ResourceDictionary>

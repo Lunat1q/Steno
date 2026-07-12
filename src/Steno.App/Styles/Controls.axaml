@@ -1,0 +1,183 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Typography -->
+    <Style Selector="TextBlock.title">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    </Style>
+
+    <Style Selector="TextBlock.step">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    </Style>
+
+    <!-- Every control that needs explaining gets one line of plain language under it,
+         instead of a tooltip nobody hovers. -->
+    <Style Selector="TextBlock.hint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,3,0,0" />
+    </Style>
+
+    <Style Selector="TextBlock.meta">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFaint}" />
+    </Style>
+    <!-- Cards -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource Surface}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusCard}" />
+        <Setter Property="Padding" Value="22" />
+    </Style>
+
+    <Style Selector="Border.banner">
+        <Setter Property="Background" Value="{DynamicResource WarnSoft}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+        <Setter Property="Padding" Value="12,10" />
+    </Style>
+
+    <!-- Numbered step badge: turns a wall of settings into a sequence you can follow. -->
+    <Style Selector="Border.badge">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusPill}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style Selector="Border.badge > TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Buttons -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource Go}" />
+        <Setter Property="Foreground" Value="#08110B" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="26,12" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource GoHover}" />
+        <Setter Property="TextBlock.Foreground" Value="#08110B" />
+    </Style>
+
+    <Style Selector="Button.danger">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource Stop}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Stop}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#2A1618" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource Stop}" />
+    </Style>
+
+    <!-- Save is a real, filled action. The old outlined/muted treatment read as disabled —
+         users do not click buttons that look read-only, and the transcript is the product. -->
+    <Style Selector="Button.save">
+        <Setter Property="Background" Value="{DynamicResource You}" />
+        <Setter Property="Foreground" Value="#06212E" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="18,9" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+    </Style>
+    <Style Selector="Button.save:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#5ECDFA" />
+        <Setter Property="TextBlock.Foreground" Value="#06212E" />
+    </Style>
+
+    <!-- Disabled must look *deliberately* off, not merely quiet — otherwise every muted button
+         reads as broken. -->
+    <Style Selector="Button:disabled /template/ ContentPresenter">
+        <Setter Property="Opacity" Value="0.4" />
+    </Style>
+
+    <Style Selector="Button.quiet">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="14,8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+    </Style>
+    <Style Selector="Button.quiet:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource Text}" />
+    </Style>
+    <!-- Inputs -->
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource RadiusControl}" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style Selector="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    </Style>
+    <!-- Transcript -->
+    <Style Selector="Border.bubble">
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Margin" Value="0,5" />
+        <Setter Property="MaxWidth" Value="560" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="Background" Value="{DynamicResource ThemSoft}" />
+        <Setter Property="BorderThickness" Value="0,0,0,0" />
+    </Style>
+
+    <!-- Your own words sit on the right, in your colour. Same convention as every
+         messaging app on earth — no legend required. -->
+    <Style Selector="Border.bubble.you">
+        <Setter Property="Background" Value="{DynamicResource YouSoft}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+    </Style>
+
+    <!-- Provisional text, still being revised. Dimmed so nobody quotes it. -->
+    <Style Selector="Border.bubble.provisional">
+        <Setter Property="Opacity" Value="0.5" />
+    </Style>
+
+    <!-- The name tag takes the speaker's colour from the bubble it sits in, so the mapping
+         (you = sky, them = amber) is reinforced everywhere without a single converter. -->
+    <Style Selector="Border.bubble TextBlock.name">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Them}" />
+    </Style>
+
+    <Style Selector="Border.bubble.you TextBlock.name">
+        <Setter Property="Foreground" Value="{DynamicResource You}" />
+    </Style>
+
+    <Style Selector="TextBlock.speech">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style Selector="TextBlock.translation">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontStyle" Value="Italic" />
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Margin" Value="0,5,0,0" />
+    </Style>
+
+</Styles>

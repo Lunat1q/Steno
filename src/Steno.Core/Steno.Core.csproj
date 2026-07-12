@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Steno.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WASAPI capture + loopback (Platform/Windows only) -->
+    <PackageReference Include="NAudio" Version="2.3.0" />
+    <!-- Managed binding over ggml-org/whisper.cpp; Runtime ships the native whisper.cpp libs -->
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
+    <!-- GPU backend. Vulkan, not CUDA: see ADR 0010 — the CUDA build hard-crashes on Blackwell,
+         and Vulkan covers NVIDIA + AMD + Intel from one package. Worth ~65× over CPU. -->
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" Version="1.9.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>

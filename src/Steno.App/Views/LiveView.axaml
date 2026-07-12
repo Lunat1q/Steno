@@ -1,0 +1,142 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Steno.App.ViewModels"
+             x:Class="Steno.App.Views.LiveView"
+             x:DataType="vm:MainViewModel">
+
+    <DockPanel>
+
+        <!--
+          The two meters are the whole status display. A user whose microphone is muted or whose
+          call audio goes to a different device sees a flat bar and fixes it in five seconds,
+          instead of discovering an empty transcript after the call.
+        -->
+        <Border DockPanel.Dock="Top" Classes="card" Padding="16" Margin="0,0,0,12">
+            <Grid ColumnDefinitions="*,20,*,Auto">
+
+                <StackPanel Grid.Column="0" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource You}" VerticalAlignment="Center" />
+                        <TextBlock Text="You" FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource You}" />
+                    </StackPanel>
+                    <ProgressBar Value="{Binding YourLevel}" Maximum="1" Height="5"
+                                 Foreground="{DynamicResource You}"
+                                 Background="{DynamicResource SurfaceRaised}" CornerRadius="3" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Them}" VerticalAlignment="Center" />
+                        <TextBlock Text="Them" FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource Them}" />
+                    </StackPanel>
+                    <ProgressBar Value="{Binding TheirLevel}" Maximum="1" Height="5"
+                                 Foreground="{DynamicResource Them}"
+                                 Background="{DynamicResource SurfaceRaised}" CornerRadius="3" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="12" Margin="24,0,0,0"
+                            VerticalAlignment="Center">
+                    <!-- Whether you are on the GPU decides whether this app is live or laggy.
+                         Say so, permanently. -->
+                    <Border Background="{DynamicResource SurfaceRaised}" CornerRadius="999" Padding="9,4"
+                            VerticalAlignment="Center" IsVisible="{Binding IsSessionActive}">
+                        <TextBlock Text="{Binding BackendLabel}" Classes="meta" />
+                    </Border>
+                    <TextBlock Text="{Binding Elapsed}" FontSize="15" FontFamily="Consolas"
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+
+                    <!-- During the call -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsSessionActive}">
+                        <Button Classes="quiet" Content="{Binding PauseLabel}"
+                                Command="{Binding TogglePauseCommand}" />
+                        <Button Classes="danger" Content="Stop" Command="{Binding StopCommand}" />
+                    </StackPanel>
+
+                    <!-- After the call: the transcript is still here, and saving it is the point. -->
+                    <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding IsReviewing}">
+                        <Button Classes="save" Content="Save transcript" Click="OnExportClick" />
+                        <Button Classes="quiet" Content="New call" Command="{Binding StartCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Paused: unmistakable, because the cost of thinking you are recording when you are
+             not (or the reverse) is the whole reason this button exists. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12" IsVisible="{Binding IsPaused}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="⏸" FontSize="15" VerticalAlignment="Center" />
+                <TextBlock Text="Paused. Nothing is being transcribed — press Resume to continue."
+                           Foreground="{DynamicResource Text}" FontSize="13" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- Call over, nothing saved yet. Offer the save instead of quietly risking the transcript. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12"
+                Background="{DynamicResource YouSoft}"
+                IsVisible="{Binding IsReviewing}">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="13" TextWrapping="Wrap"
+                           Foreground="{DynamicResource Text}"
+                           Text="Call ended. This transcript only exists here until you save it." />
+                <Button Grid.Column="1" Classes="save" Content="Save transcript" Click="OnExportClick" />
+            </Grid>
+        </Border>
+
+        <!-- Destructive action, confirmed inline. No modal, no dependency, no losing the text. -->
+        <Border DockPanel.Dock="Top" Classes="banner" Margin="0,0,0,12" Background="#2C1618"
+                IsVisible="{Binding IsConfirmingDiscard}">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" VerticalAlignment="Center" FontSize="13" TextWrapping="Wrap"
+                           Foreground="{DynamicResource Text}"
+                           Text="Starting a new call will erase the transcript you have not saved." />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+                    <Button Classes="save" Content="Save first" Click="OnExportClick" />
+                    <Button Classes="danger" Content="Erase it" Command="{Binding DiscardTranscriptCommand}" />
+                    <Button Classes="quiet" Content="Cancel" Command="{Binding CancelDiscardCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Transcript -->
+        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+                BorderThickness="1" CornerRadius="{DynamicResource RadiusCard}" Padding="16">
+            <Panel>
+
+                <!-- Empty state: says what is happening and what to do, not "no items". -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8"
+                            IsVisible="{Binding !HasEntries}">
+                    <TextBlock Text="Listening…" FontSize="16" HorizontalAlignment="Center"
+                               Foreground="{DynamicResource TextMuted}" />
+                    <TextBlock Classes="hint" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="360"
+                               Text="Lines appear a moment after each person finishes a sentence. Say something to check your microphone." />
+                </StackPanel>
+
+                <ScrollViewer Name="TranscriptScroll" IsVisible="{Binding HasEntries}">
+                    <ItemsControl ItemsSource="{Binding Entries}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:TranscriptEntryViewModel">
+                                <Border Classes="bubble"
+                                        Classes.you="{Binding IsLocal}"
+                                        Classes.provisional="{Binding !IsFinal}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Classes="name" Text="{Binding Speaker}" />
+                                            <TextBlock Text="{Binding Timestamp}" Classes="meta"
+                                                       VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <TextBlock Classes="speech" Text="{Binding Text}" Margin="0,4,0,0" />
+                                        <TextBlock Classes="translation" Text="{Binding Translation}"
+                                                   IsVisible="{Binding Translation, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Panel>
+        </Border>
+    </DockPanel>
+</UserControl>
