@@ -122,15 +122,76 @@ public sealed class WhisperTranscriber : ITranscriber
         if (segment.Tokens is null)
             return;
 
+        var pieces = new List<TranscriptToken>();
+
         foreach (var token in segment.Tokens)
         {
             var text = token?.Text;
             if (string.IsNullOrEmpty(text) || IsSpecialToken(text))
                 continue;
 
-            tokens.Add(new TranscriptToken(text, token!.Probability));
+            pieces.Add(new TranscriptToken(text, token!.Probability));
         }
+
+        tokens.AddRange(Restore(pieces, segment.Text ?? string.Empty));
     }
+
+    /// <summary>
+    /// whisper's BPE happily splits one character across two tokens — "Й" is the two bytes
+    /// D0 99, and each token can carry just one of them. Whisper.net decodes every token on its
+    /// own, so half a character is invalid UTF-8 and comes back as U+FFFD; those are the question
+    /// marks in the transcript. The bytes are gone by the time we see them.
+    ///
+    /// The segment's own text is decoded in one piece and is therefore intact, so a run of broken
+    /// tokens is repaired by taking the text back out of it: everything between where the run
+    /// starts and where the next intact token reappears. Those tokens merge into one — a character
+    /// spread over two tokens has no single probability anyway — and the run keeps the lowest of
+    /// their probabilities.
+    /// </summary>
+    internal static IReadOnlyList<TranscriptToken> Restore(IReadOnlyList<TranscriptToken> pieces, string text)
+    {
+        if (!pieces.Any(piece => piece.Text.Contains(Replacement)))
+            return pieces;
+
+        var restored = new List<TranscriptToken>(pieces.Count);
+        var cursor = 0;
+
+        for (var i = 0; i < pieces.Count; i++)
+        {
+            if (!pieces[i].Text.Contains(Replacement))
+            {
+                restored.Add(pieces[i]);
+                cursor += pieces[i].Text.Length;
+                continue;
+            }
+
+            var probability = pieces[i].Probability;
+
+            while (i + 1 < pieces.Count && pieces[i + 1].Text.Contains(Replacement))
+            {
+                i++;
+                probability = Math.Min(probability, pieces[i].Probability);
+            }
+
+            // The run ends where the next intact token starts — or at the end of the segment,
+            // if the run is trailing or the two have drifted out of alignment.
+            var next = i + 1 < pieces.Count ? pieces[i + 1].Text : null;
+            var end = next is null || cursor > text.Length
+                ? text.Length
+                : text.IndexOf(next, cursor, StringComparison.Ordinal);
+
+            if (end < cursor)
+                end = text.Length;
+
+            restored.Add(new TranscriptToken(text[cursor..end], probability));
+            cursor = end;
+        }
+
+        return restored;
+    }
+
+    /// <summary>U+FFFD — what a byte that is half a character decodes to.</summary>
+    private const char Replacement = '�';
 
     private static bool IsSpecialToken(string text) =>
         (text.StartsWith("<|", StringComparison.Ordinal) && text.EndsWith("|>", StringComparison.Ordinal)) ||
