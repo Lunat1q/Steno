@@ -18,6 +18,12 @@
             <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <TextBlock Text="Steno" FontSize="18" FontWeight="Bold"
                            Foreground="{DynamicResource Text}" />
+                <!-- Which version this actually is: the only way to tell an update landed. -->
+                <Border Background="{DynamicResource SurfaceRaised}" CornerRadius="999" Padding="7,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Version, StringFormat='v{0}'}" Classes="meta"
+                               ToolTip.Tip="The installed version of Steno" />
+                </Border>
                 <TextBlock Text="live call transcription, on this machine only" Classes="meta"
                            VerticalAlignment="Center" />
             </StackPanel>

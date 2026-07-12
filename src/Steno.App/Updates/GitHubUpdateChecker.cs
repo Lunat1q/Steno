@@ -23,8 +23,11 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
     public GitHubUpdateChecker(ILogger<GitHubUpdateChecker> logger, Version? currentVersion = null)
     {
         _logger = logger;
+
+        // This assembly, not the entry assembly: under any other host the entry assembly is the
+        // host, and comparing releases against *its* version would offer nonsense updates.
         _current = currentVersion
-                   ?? Assembly.GetEntryAssembly()?.GetName().Version
+                   ?? typeof(GitHubUpdateChecker).Assembly.GetName().Version
                    ?? new Version(0, 0, 0);
 
         _http = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };

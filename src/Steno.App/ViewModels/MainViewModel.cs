@@ -109,6 +109,9 @@ public sealed partial class MainViewModel : ObservableObject
 
     public UpdateViewModel Update { get; }
 
+    /// <summary>Shown in the header, so "did the update install?" has an answer you can see.</summary>
+    public string Version => AppVersion.Current;
+
     /// <summary>
     /// Installing an update quits the app, so the offer is only shown when there is nothing to
     /// lose: no call running, no unsaved transcript. Interrupting a live call to install a patch
