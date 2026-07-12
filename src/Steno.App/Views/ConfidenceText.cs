@@ -23,10 +23,12 @@ public static class ConfidenceText
     private const float High = 0.85f;
 
     private const float Medium = 0.70f;
-    private const float Low = 0.55f;
 
-    /// <summary>Below this the word is closer to a guess than a transcription. Underlined.</summary>
-    private const float Doubtful = 0.40f;
+    /// <summary>
+    /// Below this the word is closer to a guess than a transcription: it is drawn red *and*
+    /// underlined, so the warning does not depend on being able to see the hue.
+    /// </summary>
+    private const float Low = 0.55f;
 
     public static readonly AttachedProperty<IReadOnlyList<TranscriptToken>?> TokensProperty =
         AvaloniaProperty.RegisterAttached<TextBlock, IReadOnlyList<TranscriptToken>?>(
@@ -57,7 +59,7 @@ public static class ConfidenceText
             inlines.Add(new Run(token.Text)
             {
                 Foreground = BrushFor(token.Probability),
-                TextDecorations = token.Probability < Doubtful ? Doubt : null
+                TextDecorations = token.Probability < Low ? Doubt : null
             });
         }
 

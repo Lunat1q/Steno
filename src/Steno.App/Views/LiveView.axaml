@@ -106,12 +106,17 @@
             </Grid>
         </Border>
 
-        <!-- Shading nobody can interpret is just decoration. Say what it means, once. -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="4,10,0,0"
-                    IsVisible="{Binding HasEntries}">
-            <TextBlock Classes="meta" Text="Faded words are ones the model was less sure it heard correctly." />
-            <TextBlock Text="example" FontSize="11" Foreground="{DynamicResource ConfidenceVeryLow}" />
-        </StackPanel>
+        <!-- Shading nobody can interpret is just decoration. Say what it means, once — and show
+             both ends of the scale: a faded word on its own looks like ordinary small print, since
+             the legend's own colour is about as dim as an unsure word's. -->
+        <TextBlock Classes="meta" DockPanel.Dock="Bottom" Margin="4,10,0,0"
+                   IsVisible="{Binding HasEntries}">
+            <Run Text="Each word is shaded by how sure the model was it heard it:" />
+            <Run Text="heard clearly," Foreground="{DynamicResource ConfidenceHigh}" />
+            <Run Text="less sure," Foreground="{DynamicResource ConfidenceLow}" />
+            <Run Text="a guess" Foreground="{DynamicResource ConfidenceVeryLow}" TextDecorations="Underline" />
+            <Run Text="— check those before you quote them." />
+        </TextBlock>
 
         <!-- Transcript -->
         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
