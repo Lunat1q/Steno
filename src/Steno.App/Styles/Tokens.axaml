@@ -34,6 +34,22 @@
     <SolidColorBrush x:Key="Them" Color="#FBA94C" />
     <SolidColorBrush x:Key="ThemSoft" Color="#3A2B14" />
 
+    <!--
+      Per-word confidence (whisper.cpp's print-colors mode, adapted).
+
+      whisper.cpp ramps red→green per token. We cannot: in this app hue already means *speaker*
+      (You = sky, Them = amber), and a green/red word inside an amber bubble would wreck the one
+      mapping the product depends on. So confidence is carried by *luminance* instead — sure
+      words are solid, unsure words fade toward the background, exactly the way a word you half
+      heard feels. The lowest band also gets a red underline, because fading alone is easy to
+      miss on a word you were about to quote.
+    -->
+    <SolidColorBrush x:Key="ConfidenceHigh" Color="#E8EAEE" />
+    <SolidColorBrush x:Key="ConfidenceMedium" Color="#AEB6C2" />
+    <SolidColorBrush x:Key="ConfidenceLow" Color="#7C8593" />
+    <SolidColorBrush x:Key="ConfidenceVeryLow" Color="#616977" />
+    <SolidColorBrush x:Key="ConfidenceUnderline" Color="#B3474B" />
+
     <!-- Actions -->
     <SolidColorBrush x:Key="Go" Color="#2FBF71" />
     <SolidColorBrush x:Key="GoHover" Color="#38D882" />

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Steno.Core.Session;
+using Steno.Core.Transcription;
 
 namespace Steno.App.ViewModels;
 
@@ -10,6 +11,14 @@ public sealed partial class TranscriptEntryViewModel : ObservableObject
     [ObservableProperty] private string? _translation;
     [ObservableProperty] private bool _isFinal;
 
+    /// <summary>Per-word confidence. The view shades each word with it (whisper.cpp's --print-colors).</summary>
+    [ObservableProperty] private IReadOnlyList<TranscriptToken> _tokens;
+
+    /// <summary>Worst word in the line. Drives the "some words are uncertain" marker.</summary>
+    public float LowestConfidence => Tokens.Count == 0 ? 1f : Tokens.Min(t => t.Probability);
+
+    public bool HasUncertainWords => LowestConfidence < 0.55f;
+
     public TranscriptEntryViewModel(TranscriptEntry entry)
     {
         Id = entry.Id;
@@ -19,6 +28,7 @@ public sealed partial class TranscriptEntryViewModel : ObservableObject
         _text = entry.Text;
         _translation = entry.Translation;
         _isFinal = entry.IsFinal;
+        _tokens = entry.Tokens;
     }
 
     public Guid Id { get; }
@@ -38,5 +48,9 @@ public sealed partial class TranscriptEntryViewModel : ObservableObject
         Text = entry.Text;
         Translation = entry.Translation;
         IsFinal = entry.IsFinal;
+        Tokens = entry.Tokens;
+
+        OnPropertyChanged(nameof(LowestConfidence));
+        OnPropertyChanged(nameof(HasUncertainWords));
     }
 }

@@ -219,7 +219,8 @@ public sealed class ChannelPipeline : IAsyncDisposable
             result.Text,
             Translation: null,
             result.Confidence,
-            utterance.Kind == UtteranceKind.Final);
+            utterance.Kind == UtteranceKind.Final,
+            result.Tokens);
 
         EntryProduced?.Invoke(entry);
 

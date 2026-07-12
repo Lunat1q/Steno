@@ -55,6 +55,7 @@ public sealed class WhisperTranscriber : ITranscriber
         try
         {
             var text = new StringBuilder();
+            var tokens = new List<TranscriptToken>();
             var probabilitySum = 0f;
             var noSpeechMin = 1f;
             var segments = 0;
@@ -65,6 +66,8 @@ public sealed class WhisperTranscriber : ITranscriber
                                .ConfigureAwait(false))
             {
                 text.Append(segment.Text);
+                CollectTokens(segment, tokens);
+
                 probabilitySum += segment.Probability;
                 // Any single segment claiming speech is enough; whisper reports this per segment.
                 noSpeechMin = Math.Min(noSpeechMin, segment.NoSpeechProbability);
@@ -79,13 +82,38 @@ public sealed class WhisperTranscriber : ITranscriber
                 Clean(text.ToString()),
                 probabilitySum / segments,
                 noSpeechMin,
-                language);
+                language,
+                tokens);
         }
         finally
         {
             _gate.Release();
         }
     }
+
+    /// <summary>
+    /// Per-token probabilities, as whisper.cpp's own `--print-colors` uses them. Special tokens
+    /// (`&lt;|ru|&gt;`, `[_BEG_]`, timestamps) carry probabilities too but are not words, so they
+    /// are dropped — colouring them would be colouring the model's internal punctuation.
+    /// </summary>
+    private static void CollectTokens(SegmentData segment, List<TranscriptToken> tokens)
+    {
+        if (segment.Tokens is null)
+            return;
+
+        foreach (var token in segment.Tokens)
+        {
+            var text = token?.Text;
+            if (string.IsNullOrEmpty(text) || IsSpecialToken(text))
+                continue;
+
+            tokens.Add(new TranscriptToken(text, token!.Probability));
+        }
+    }
+
+    private static bool IsSpecialToken(string text) =>
+        (text.StartsWith("<|", StringComparison.Ordinal) && text.EndsWith("|>", StringComparison.Ordinal)) ||
+        (text.StartsWith("[_", StringComparison.Ordinal) && text.EndsWith(']'));
 
     /// <summary>
     /// whisper.cpp annotates non-speech events inline — "[BLANK_AUDIO]", "(музыка)",

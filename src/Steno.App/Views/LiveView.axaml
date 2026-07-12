@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Steno.App.ViewModels"
+             xmlns:views="using:Steno.App.Views"
              x:Class="Steno.App.Views.LiveView"
              x:DataType="vm:MainViewModel">
 
@@ -100,6 +101,13 @@
             </Grid>
         </Border>
 
+        <!-- Shading nobody can interpret is just decoration. Say what it means, once. -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="4,10,0,0"
+                    IsVisible="{Binding HasEntries}">
+            <TextBlock Classes="meta" Text="Faded words are ones the model was less sure it heard correctly." />
+            <TextBlock Text="example" FontSize="11" Foreground="{DynamicResource ConfidenceVeryLow}" />
+        </StackPanel>
+
         <!-- Transcript -->
         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
                 BorderThickness="1" CornerRadius="{DynamicResource RadiusCard}" Padding="16">
@@ -127,7 +135,10 @@
                                             <TextBlock Text="{Binding Timestamp}" Classes="meta"
                                                        VerticalAlignment="Center" />
                                         </StackPanel>
-                                        <TextBlock Classes="speech" Text="{Binding Text}" Margin="0,4,0,0" />
+                                        <!-- Text is the fallback; ConfidenceText replaces it with
+                                             per-word shaded runs whenever the engine gave us tokens. -->
+                                        <TextBlock Classes="speech" Text="{Binding Text}" Margin="0,4,0,0"
+                                                   views:ConfidenceText.Tokens="{Binding Tokens}" />
                                         <TextBlock Classes="translation" Text="{Binding Translation}"
                                                    IsVisible="{Binding Translation, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                     </StackPanel>

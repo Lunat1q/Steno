@@ -142,7 +142,8 @@ public class PausedPipelineTests
             Interlocked.Increment(ref _count);
             _called.Release();
 
-            return Task.FromResult(new TranscriptionResult("да", 0.9f, 0.01f, "ru"));
+            return Task.FromResult(new TranscriptionResult(
+                "да", 0.9f, 0.01f, "ru", [new TranscriptToken("да", 0.9f)]));
         }
 
         public Task<TranscriptionResult> TranslateAsync(

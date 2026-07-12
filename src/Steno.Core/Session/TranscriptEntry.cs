@@ -1,4 +1,5 @@
 using Steno.Core.Segmentation;
+using Steno.Core.Transcription;
 
 namespace Steno.Core.Session;
 
@@ -12,6 +13,10 @@ public enum SpeakerChannel
 }
 
 /// <param name="IsFinal">False for a provisional partial, which a later final entry replaces.</param>
+/// <param name="Tokens">
+/// Per-word confidence, so the UI can show *which* words the model was unsure of rather than
+/// only an average nobody can act on. Empty when the engine reported none.
+/// </param>
 public sealed record TranscriptEntry(
     Guid Id,
     SpeakerChannel Channel,
@@ -21,7 +26,8 @@ public sealed record TranscriptEntry(
     string Text,
     string? Translation,
     float Confidence,
-    bool IsFinal)
+    bool IsFinal,
+    IReadOnlyList<TranscriptToken> Tokens)
 {
     public override string ToString() => $"[{Start:hh\\:mm\\:ss}] {Speaker}: {Text}";
 }
