@@ -39,6 +39,8 @@ public static class ServiceRegistration
         services.AddSingleton<ITranscriptExporter, MarkdownTranscriptExporter>();
         services.AddSingleton<ITranscriptExporter, JsonTranscriptExporter>();
 
+        services.AddSingleton<IUserSettingsStore, JsonUserSettingsStore>();
+
         services.AddSingleton<SetupViewModel>();
         services.AddSingleton<MainViewModel>();
 

@@ -20,3 +20,4 @@ code alone never explains *why not the other thing*.
 | [0013](0013-confidence-shading.md) | Per-word confidence shown as luminance, not hue | whisper.cpp's red→green ramp would collide with "colour = speaker", which the product depends on |
 | [0014](0014-cold-start-and-capture-latency.md) | Warm the GPU up before the call; trim the capture buffer | The remaining lag was Vulkan's first-inference cost being swallowed by back-pressure — 4.9 s → 0.7 s |
 | [0015](0015-vad-deafness.md) | The noise floor may only learn from quiet frames, and is hard-capped | Fricatives were teaching the VAD that speech was noise; it went permanently deaf after ~20 s |
+| [0016](0016-remembering-choices.md) | Remember the last setup in %LOCALAPPDATA%/Steno/settings.json | The app asked the same questions every launch and ignored the same answers |

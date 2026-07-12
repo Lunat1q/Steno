@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Steno.App.Composition;
 using Steno.Core.Abstractions;
 using Steno.Core.Audio;
 using Steno.Core.Segmentation;
@@ -17,6 +18,10 @@ public sealed partial class SetupViewModel : ObservableObject
 {
     private readonly IAudioDeviceProvider _devices;
     private readonly IWhisperModelProvider _models;
+    private readonly IUserSettingsStore _settings;
+
+    /// <summary>Suppresses the save-on-change while we are applying what we just loaded.</summary>
+    private bool _restoring;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsReady))]
@@ -42,11 +47,66 @@ public sealed partial class SetupViewModel : ObservableObject
     /// </summary>
     [ObservableProperty] private bool _showLiveDraft = true;
 
-    public SetupViewModel(IAudioDeviceProvider devices, IWhisperModelProvider models)
+    public SetupViewModel(
+        IAudioDeviceProvider devices,
+        IWhisperModelProvider models,
+        IUserSettingsStore settings)
     {
         _devices = devices;
         _models = models;
-        RefreshDevices();
+        _settings = settings;
+
+        // Nothing may be written during construction: RefreshDevices() raises property changes,
+        // and saving those defaults would overwrite the very file we are about to read.
+        _restoring = true;
+        try
+        {
+            var saved = settings.Load();
+            RefreshDevices();
+            Restore(saved);
+        }
+        finally
+        {
+            _restoring = false;
+        }
+    }
+
+    /// <summary>
+    /// Puts back what the user chose last time. Anything that no longer exists — an unplugged
+    /// headset, a quality that has since been renamed — falls back to the default rather than
+    /// leaving the screen in a state the user cannot act on.
+    /// </summary>
+    private void Restore(UserSettings saved)
+    {
+        Quality = QualityChoice.All.FirstOrDefault(q => q.Name == saved.QualityName) ?? Quality;
+        Language = LanguageChoice.All.FirstOrDefault(l => l.Code == saved.LanguageCode) ?? Language;
+
+        Microphone = Microphones.FirstOrDefault(d => d.Id == saved.MicrophoneId) ?? Microphone;
+        Speaker = Speakers.FirstOrDefault(d => d.Id == saved.SpeakerId) ?? Speaker;
+
+        TranslateToEnglish = saved.TranslateToEnglish ?? TranslateToEnglish;
+        ShowLiveDraft = saved.ShowLiveDraft ?? ShowLiveDraft;
+        SuppressEcho = saved.SuppressEcho ?? SuppressEcho;
+    }
+
+    /// <summary>Every choice is saved the moment it is made — there is no Apply button to forget.</summary>
+    protected override void OnPropertyChanged(System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        base.OnPropertyChanged(e);
+
+        if (_restoring)
+            return;
+
+        _settings.Save(new UserSettings
+        {
+            QualityName = Quality.Name,
+            LanguageCode = Language.Code,
+            MicrophoneId = Microphone?.Id,
+            SpeakerId = Speaker?.Id,
+            TranslateToEnglish = TranslateToEnglish,
+            ShowLiveDraft = ShowLiveDraft,
+            SuppressEcho = SuppressEcho
+        });
     }
 
     public ObservableCollection<AudioDevice> Microphones { get; } = [];
