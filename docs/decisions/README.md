@@ -25,3 +25,4 @@ code alone never explains *why not the other thing*.
 | [0018](0018-updates.md) | Update from GitHub Releases; verify SHA-256 before running the MSI | The releases API is already the source of truth, and the payload is executable |
 | [0019](0019-hallucinated-subtitles.md) | Energy gate + content blocklist for whisper's invented subtitles | On pure silence whisper says "Продолжение следует..." at 0.000 no-speech and 0.85 confidence — no threshold can catch it |
 | [0020](0020-recording-and-offline.md) | Record as one stereo WAV (left=you, right=them); offline transcription reuses the live rules | The channel IS the speaker, so a recording re-transcribes with attribution intact and needs no diarization |
+| [0021](0021-no-blocking-the-ui-thread.md) | Load the model inside Task.Run | "async" is not "off this thread": with the model cached every await completed synchronously, so 1.2 s of native loading ran on the UI thread |

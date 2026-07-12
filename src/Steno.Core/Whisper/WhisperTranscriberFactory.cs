@@ -40,17 +40,22 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
 
         var factory = await GetOrLoadModelAsync(options.Model, cancellationToken).ConfigureAwait(false);
 
-        var transcribe = BuildProcessor(factory, options, translate: false);
+        // Building a processor allocates a native whisper context — synchronous, and not free.
+        // Off the caller's thread with everything else (ADR 0021).
+        var transcriber = await Task.Run(() =>
+        {
+            var transcribe = BuildProcessor(factory, options, translate: false);
 
-        // Same model, cheaper decode: partials are replaced within a second, so beam search and
-        // temperature fallbacks buy accuracy nobody will ever read (ADR 0010).
-        var draft = BuildProcessor(factory, options, translate: false, draft: true);
+            // Same model, cheaper decode: partials are replaced within a second, so beam search
+            // and temperature fallbacks buy accuracy nobody will ever read (ADR 0010).
+            var draft = BuildProcessor(factory, options, translate: false, draft: true);
 
-        var translate = options.Translation == TranslationMode.ToEnglish
-            ? BuildProcessor(factory, options, translate: true)
-            : null;
+            var translate = options.Translation == TranslationMode.ToEnglish
+                ? BuildProcessor(factory, options, translate: true)
+                : null;
 
-        var transcriber = new WhisperTranscriber(transcribe, draft, translate);
+            return new WhisperTranscriber(transcribe, draft, translate);
+        }, cancellationToken).ConfigureAwait(false);
 
         // Pay the GPU's first-inference cost now, not on the caller's first sentence.
         var warmUp = Stopwatch.StartNew();
@@ -89,7 +94,15 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
             WhisperRuntime.Configure();
 
             _logger.LogInformation("Loading whisper.cpp model from {Path}", path);
-            _whisperFactory = WhisperFactory.FromPath(path);
+
+            // Task.Run, because FromPath is a synchronous native call that reads 1.5–3 GB of
+            // weights. Everything above it completes synchronously once the model is cached, so
+            // without this the load runs on whatever thread pressed Start — the UI thread — and
+            // the window freezes for a second or two (ADR 0021).
+            _whisperFactory = await Task
+                .Run(() => WhisperFactory.FromPath(path), cancellationToken)
+                .ConfigureAwait(false);
+
             _loadedModel = model;
 
             _logger.LogInformation("whisper.cpp running on {Backend}", WhisperRuntime.Describe());
