@@ -23,3 +23,4 @@ code alone never explains *why not the other thing*.
 | [0016](0016-remembering-choices.md) | Remember the last setup in %LOCALAPPDATA%/Steno/settings.json | The app asked the same questions every launch and ignored the same answers |
 | [0017](0017-packaging.md) | MSI installer (WiX, per-user, TiQ Studio); no true single exe | whisper.cpp's natives must live in a runtimes/ folder — bundling them yields an exe that dies on Start |
 | [0018](0018-updates.md) | Update from GitHub Releases; verify SHA-256 before running the MSI | The releases API is already the source of truth, and the payload is executable |
+| [0019](0019-hallucinated-subtitles.md) | Energy gate + content blocklist for whisper's invented subtitles | On pure silence whisper says "Продолжение следует..." at 0.000 no-speech and 0.85 confidence — no threshold can catch it |

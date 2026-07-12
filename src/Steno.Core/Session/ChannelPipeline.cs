@@ -22,6 +22,13 @@ public sealed class ChannelPipeline : IAsyncDisposable
     /// <summary>20 ms frames × 5 ≈ 10 level updates a second. Enough to look live, cheap to render.</summary>
     private const int LevelReportEveryNthFrame = 5;
 
+    /// <summary>
+    /// Below this RMS an utterance is hiss, not speech. Speech sits at 0.05–0.3 even from a quiet
+    /// talker, so this is a wide margin — it exists to keep silence away from whisper, which
+    /// answers silence with confident nonsense (ADR 0019).
+    /// </summary>
+    private const float MinSpeechRms = 0.004f;
+
     private readonly SpeakerChannel _channel;
     private readonly IAudioCaptureSource _capture;
     private readonly UtteranceSegmenter _segmenter;
@@ -201,6 +208,14 @@ public sealed class ChannelPipeline : IAsyncDisposable
 
     private async Task TranscribeAsync(Utterance utterance, CancellationToken cancellationToken)
     {
+        // Cheapest filter first: audio this quiet is not a sentence, and whisper answers silence
+        // with invented subtitle furniture. Skipping it also saves a GPU pass.
+        if (EnergyVoiceActivityDetector.Rms(utterance.Samples.Span) < MinSpeechRms)
+        {
+            _logger.LogDebug("Dropped near-silent utterance at {Start}", utterance.Start);
+            return;
+        }
+
         var isDraft = utterance.Kind == UtteranceKind.Partial;
 
         var result = await _transcriber
@@ -208,7 +223,16 @@ public sealed class ChannelPipeline : IAsyncDisposable
             .ConfigureAwait(false);
 
         if (result.IsEmpty || result.NoSpeechProbability > _options.NoSpeechThreshold)
-            return; // VAD let noise through; whisper.cpp would answer with confident nonsense
+            return;
+
+        // whisper.cpp hallucinates YouTube subtitle boilerplate over noise — and does it with a
+        // no-speech probability of 0.000 and 0.85 confidence, so no threshold can catch it.
+        // Only the content gives it away (ADR 0019).
+        if (HallucinationFilter.IsHallucination(result.Text))
+        {
+            _logger.LogDebug("Dropped hallucinated text on {Channel}: {Text}", _channel, result.Text);
+            return;
+        }
 
         var entry = new TranscriptEntry(
             utterance.Id,
