@@ -19,3 +19,4 @@ code alone never explains *why not the other thing*.
 | [0012](0012-app-icon.md) | `icon.svg` is the source; the generated `.ico` is committed | Nothing in the .NET SDK rasterises SVG — generating at build time would cost a dependency forever |
 | [0013](0013-confidence-shading.md) | Per-word confidence shown as luminance, not hue | whisper.cpp's red→green ramp would collide with "colour = speaker", which the product depends on |
 | [0014](0014-cold-start-and-capture-latency.md) | Warm the GPU up before the call; trim the capture buffer | The remaining lag was Vulkan's first-inference cost being swallowed by back-pressure — 4.9 s → 0.7 s |
+| [0015](0015-vad-deafness.md) | The noise floor may only learn from quiet frames, and is hard-capped | Fricatives were teaching the VAD that speech was noise; it went permanently deaf after ~20 s |

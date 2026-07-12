@@ -16,8 +16,21 @@ namespace Steno.Core.Segmentation;
 public sealed class EnergyVoiceActivityDetector : IVoiceActivityDetector
 {
     private const float InitialNoiseFloor = 1e-4f;
-    private const float FloorAttack = 0.05f;   // rise toward a louder noise floor
-    private const float FloorRelease = 0.002f; // fall toward a quieter one: slow, avoids chasing speech gaps
+
+    /// <summary>Rise toward a louder room. Deliberately slow: a fast rise is how the detector
+    /// talks itself into silence.</summary>
+    private const float FloorRise = 0.003f;
+
+    /// <summary>Fall toward a quieter room. Faster than the rise — being too sensitive is
+    /// recoverable, being deaf is not.</summary>
+    private const float FloorFall = 0.05f;
+
+    /// <summary>
+    /// Hard ceiling on the learned floor. Speech RMS sits around 0.1–0.3, so with the 4× SNR
+    /// factor this keeps the speech threshold at most 0.08 — below any normal voice. Even if
+    /// every heuristic above it is wrong, the detector cannot become permanently deaf.
+    /// </summary>
+    private const float MaxNoiseFloor = 0.02f;
 
     /// <summary>Speech must exceed the noise floor by this factor (~12 dB).</summary>
     private const float SnrFactor = 4.0f;
@@ -38,17 +51,23 @@ public sealed class EnergyVoiceActivityDetector : IVoiceActivityDetector
             return false;
 
         var rms = Rms(frame);
-        var speech =
-            rms > AbsoluteFloor &&
-            rms > _noiseFloor * SnrFactor &&
-            IsVocalZeroCrossingRate(frame);
 
-        // Only adapt on non-speech, so speech never raises the bar against itself.
-        if (!speech)
+        // "Loud" is about energy alone. Speech also has to sound like a voice, but that second
+        // test must NOT feed back into the noise floor — see below.
+        var loud = rms > AbsoluteFloor && rms > _noiseFloor * SnrFactor;
+        var speech = loud && IsVocalZeroCrossingRate(frame);
+
+        // The floor learns the *room*, so it may only learn from frames that are quiet relative
+        // to it. Learning from loud frames is a death spiral: a fricative ("s", "sh") is as loud
+        // as a vowel but fails the zero-crossing test, so it used to count as "not speech" and
+        // drag the floor up toward speech level. A few seconds of talking then put the threshold
+        // above the speaker's own voice and the detector went permanently deaf — meters moving,
+        // no text, forever.
+        if (!loud)
         {
-            var rate = rms > _noiseFloor ? FloorAttack : FloorRelease;
+            var rate = rms > _noiseFloor ? FloorRise : FloorFall;
             _noiseFloor += (rms - _noiseFloor) * rate;
-            _noiseFloor = Math.Max(_noiseFloor, 1e-6f);
+            _noiseFloor = Math.Clamp(_noiseFloor, 1e-6f, MaxNoiseFloor);
         }
 
         return speech;
