@@ -28,7 +28,6 @@ public sealed record LanguageChoice(string Name, string Code)
     [
         new("Russian", "ru"),
         new("English", "en"),
-        new("Ukrainian", "uk"),
         new("German", "de"),
         new("Spanish", "es"),
         new("Detect automatically", "auto")
