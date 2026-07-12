@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Steno.Core.Abstractions;
 using Steno.Core.Transcription;
@@ -49,7 +50,14 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
             ? BuildProcessor(factory, options, translate: true)
             : null;
 
-        return new WhisperTranscriber(transcribe, draft, translate);
+        var transcriber = new WhisperTranscriber(transcribe, draft, translate);
+
+        // Pay the GPU's first-inference cost now, not on the caller's first sentence.
+        var warmUp = Stopwatch.StartNew();
+        await transcriber.WarmUpAsync(cancellationToken).ConfigureAwait(false);
+        _logger.LogInformation("Warmed up whisper processors in {Elapsed} ms", warmUp.ElapsedMilliseconds);
+
+        return transcriber;
     }
 
     /// <summary>Which native backend whisper.cpp actually loaded. Null until the first model load.</summary>

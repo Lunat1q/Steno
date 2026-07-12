@@ -24,8 +24,12 @@ public sealed record Utterance(
 
 public sealed record SegmentationOptions
 {
-    /// <summary>Speech must persist this long before an utterance opens. Rejects clicks and keystrokes.</summary>
-    public int SpeechOnsetMs { get; init; } = 120;
+    /// <summary>
+    /// Speech must persist this long before an utterance opens. Rejects clicks and keystrokes,
+    /// and every millisecond of it delays the first draft — the pre-roll buffer means the audio
+    /// itself is not lost, only the moment we start paying attention.
+    /// </summary>
+    public int SpeechOnsetMs { get; init; } = 80;
 
     /// <summary>
     /// Silence this long closes the utterance — the dominant term in *final* latency.

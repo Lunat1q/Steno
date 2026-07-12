@@ -23,10 +23,13 @@ Your default microphone and speakers are already selected, so the short version 
 it, press **Start listening**. The first run downloads the speech model to
 `%LOCALAPPDATA%/Steno/models` (Balanced ≈ 1.5 GB, once); choose **Fast** on a weak laptop.
 
-**Latency is a GPU question.** Text lands in roughly **600 ms** on a GPU (Vulkan — NVIDIA,
-AMD or Intel, nothing to install). On CPU the same model takes ~11 seconds per utterance, so
-the app says so in a banner and you should pick **Fast**. The live header always shows which
-backend is in use. Numbers and reasoning: [ADR 0010](docs/decisions/0010-sub-second-latency.md).
+**Latency is a GPU question.** Measured end to end on a GPU (Vulkan — NVIDIA, AMD or Intel,
+nothing to install): **~700 ms** from speaking a word to seeing it, and **~760 ms** for the
+corrected final line after you stop talking. On CPU the same model takes ~11 seconds per
+utterance, so the app says so in a banner and you should pick **Fast**. The live header always
+shows which backend is in use. Numbers and reasoning:
+[ADR 0010](docs/decisions/0010-sub-second-latency.md) and
+[ADR 0014](docs/decisions/0014-cold-start-and-capture-latency.md).
 
 During the call you get two level meters — **You** in sky, **Them** in amber — so a muted
 mic or misrouted call audio is obvious immediately, and a transcript in those same two

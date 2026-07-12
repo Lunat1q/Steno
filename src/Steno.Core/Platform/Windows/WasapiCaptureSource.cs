@@ -22,6 +22,9 @@ public sealed class WasapiCaptureSource : IAudioCaptureSource
     /// <summary>How often the silence filler checks the clock while the device says nothing.</summary>
     private static readonly TimeSpan SilenceTick = TimeSpan.FromMilliseconds(100);
 
+    /// <summary>Device buffer. Pure latency before a word even reaches the VAD (ADR 0014).</summary>
+    private const int CaptureBufferMs = 40;
+
     private readonly string _deviceId;
     private readonly bool _loopback;
     private readonly object _sync = new();
@@ -65,9 +68,16 @@ public sealed class WasapiCaptureSource : IAudioCaptureSource
                 using var enumerator = new MMDeviceEnumerator();
                 _device = enumerator.GetDevice(_deviceId);
 
+                // NAudio's default capture buffer is 100 ms, and every millisecond of it is pure
+                // latency before a word even reaches the VAD. 40 ms stays comfortably above the
+                // WASAPI period, so it does not risk glitching. Event-sync mode wakes us as soon
+                // as the device has data instead of polling.
                 _capture = _loopback
                     ? new WasapiLoopbackCapture(_device)
-                    : new WasapiCapture(_device) { ShareMode = AudioClientShareMode.Shared };
+                    : new WasapiCapture(_device, useEventSync: true, CaptureBufferMs)
+                    {
+                        ShareMode = AudioClientShareMode.Shared
+                    };
 
                 _normalizer = new AudioStreamNormalizer(_capture.WaveFormat);
                 _capture.DataAvailable += OnDataAvailable;

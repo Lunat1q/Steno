@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Steno.Core.Abstractions;
+using Steno.Core.Audio;
 using Steno.Core.Transcription;
 using Whisper.net;
 
@@ -36,6 +37,26 @@ public sealed class WhisperTranscriber : ITranscriber
         bool draft = false,
         CancellationToken cancellationToken = default) =>
         RunAsync(draft ? _draftProcessor : _transcribeProcessor, samples, cancellationToken);
+
+    /// <summary>
+    /// Pushes a short silent buffer through every processor before the call starts.
+    ///
+    /// The first inference on a GPU backend is *far* slower than the rest — Vulkan compiles its
+    /// compute pipelines on first use — and whichever utterance pays that cost arrives seconds
+    /// late, or gets dropped as the queue backs up behind it. That was the opening seconds of
+    /// every call being silently swallowed. Pay it here instead, while the UI is already showing
+    /// "Warming up…" and nobody is talking yet.
+    /// </summary>
+    public async Task WarmUpAsync(CancellationToken cancellationToken = default)
+    {
+        var silence = new float[AudioConstants.SampleRate]; // 1 s
+
+        await RunAsync(_transcribeProcessor, silence, cancellationToken).ConfigureAwait(false);
+        await RunAsync(_draftProcessor, silence, cancellationToken).ConfigureAwait(false);
+
+        if (_translateProcessor is not null)
+            await RunAsync(_translateProcessor, silence, cancellationToken).ConfigureAwait(false);
+    }
 
     public Task<TranscriptionResult> TranslateAsync(
         ReadOnlyMemory<float> samples,
