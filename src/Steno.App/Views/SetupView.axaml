@@ -75,6 +75,33 @@
                     </StackPanel>
                 </Grid>
 
+                <!-- Step 4. Which processor does the work is the difference between "live" and
+                     "eleven seconds later", and which one wins is machine-specific — so the button
+                     next to it measures this machine instead of arguing about it (ADR 0024). -->
+                <Grid ColumnDefinitions="Auto,*">
+                    <Border Grid.Column="0" Classes="badge" Margin="0,2,12,0">
+                        <TextBlock Text="4" />
+                    </Border>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Classes="step" Text="What does the work" />
+                        <Grid ColumnDefinitions="*,12,Auto" Margin="0,8,0,0">
+                            <ComboBox Grid.Column="0" ItemsSource="{Binding Setup.Processings}"
+                                      SelectedItem="{Binding Setup.Processing}"
+                                      HorizontalAlignment="Stretch" />
+                            <Button Grid.Column="2" Classes="quiet" Content="Test speed"
+                                    Command="{Binding Setup.BenchmarkCommand}"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Transcribes the same sentence on both and keeps the faster one. Takes a minute or two." />
+                        </Grid>
+                        <TextBlock Classes="hint" Text="{Binding Setup.Processing.Detail}" />
+                        <TextBlock Classes="hint" Text="{Binding Setup.BenchmarkStatus}"
+                                   Foreground="{DynamicResource Text}"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding Setup.BenchmarkStatus,
+                                               Converter={x:Static ObjectConverters.IsNotNull}}" />
+                    </StackPanel>
+                </Grid>
+
                 <!-- The one piece of advice that changes the result. Not buried in a tooltip. -->
                 <Border Classes="banner">
                     <StackPanel Orientation="Horizontal" Spacing="10">

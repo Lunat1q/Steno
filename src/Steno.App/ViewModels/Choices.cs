@@ -21,6 +21,31 @@ public sealed record QualityChoice(string Name, string Detail, WhisperModel Mode
     public override string ToString() => Name;
 }
 
+/// <summary>
+/// CPU or GPU. Offered as a choice rather than decided for the user because the right answer is
+/// machine-specific — a discrete GPU is ~65× faster, a weak integrated one can be slower than the
+/// CPU next to it — and because there is a button that measures it (ADR 0024).
+/// </summary>
+public sealed record ProcessingChoice(string Name, string Detail, ComputeBackend Backend)
+{
+    public static IReadOnlyList<ProcessingChoice> All { get; } =
+    [
+        new("Automatic", "Uses the graphics card if there is one it can drive, otherwise the processor.",
+            ComputeBackend.Auto),
+        new("Graphics card", "Much faster on a real GPU. Can be slower than the processor on a basic laptop.",
+            ComputeBackend.Gpu),
+        new("Processor", "Slower on most machines, but steady, and it leaves the screen alone.",
+            ComputeBackend.Cpu)
+    ];
+
+    public static ProcessingChoice Default => All[0];
+
+    public static ProcessingChoice For(ComputeBackend backend) =>
+        All.FirstOrDefault(choice => choice.Backend == backend) ?? Default;
+
+    public override string ToString() => Name;
+}
+
 /// <param name="Code">ISO-639-1, or "auto" to let whisper.cpp detect it.</param>
 public sealed record LanguageChoice(string Name, string Code)
 {

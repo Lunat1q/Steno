@@ -17,6 +17,9 @@ public sealed record UserSettings
     public bool? ShowLiveDraft { get; init; }
     public bool? SuppressEcho { get; init; }
     public bool? RecordAudio { get; init; }
+
+    /// <summary>Name of the chosen <see cref="ViewModels.ProcessingChoice" /> — CPU, GPU or automatic.</summary>
+    public string? ProcessingName { get; init; }
 }
 
 public interface IUserSettingsStore

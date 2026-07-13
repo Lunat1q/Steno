@@ -12,6 +12,26 @@ public enum TranslationMode
     ToEnglish
 }
 
+/// <summary>
+/// Which processor whisper.cpp runs the model on. Not a native-library choice — the Vulkan
+/// build carries CPU kernels too, so this is a per-model-load flag (ADR 0024) and can be
+/// changed between calls without restarting the app.
+/// </summary>
+public enum ComputeBackend
+{
+    /// <summary>GPU when one is present, CPU when not. whisper.cpp decides at load time.</summary>
+    Auto,
+
+    /// <summary>Insist on the GPU. Fails to start rather than silently running 20× slower.</summary>
+    Gpu,
+
+    /// <summary>
+    /// Never touch the GPU. On a weak integrated GPU this is not a fallback — it is often
+    /// the faster option, and always the one that leaves the display responsive.
+    /// </summary>
+    Cpu
+}
+
 /// <summary>Model sizes as published by ggml-org/whisper.cpp.</summary>
 public enum WhisperModel
 {
@@ -32,6 +52,9 @@ public sealed record TranscriptionOptions
     public string Language { get; init; } = "ru";
 
     public TranslationMode Translation { get; init; } = TranslationMode.Off;
+
+    /// <summary>CPU or GPU. The single biggest lever on latency — measure it, don't guess (ADR 0024).</summary>
+    public ComputeBackend Backend { get; init; } = ComputeBackend.Auto;
 
     /// <summary>0 = let whisper.cpp pick (cores - 1).</summary>
     public int Threads { get; init; }

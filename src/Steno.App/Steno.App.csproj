@@ -16,7 +16,7 @@
       if it lags, a build from source thinks it is old and offers itself an update that is already
       installed.
     -->
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <Company>TiQ Studio</Company>
     <Product>Steno</Product>
     <Copyright>Copyright © TiQ Studio</Copyright>

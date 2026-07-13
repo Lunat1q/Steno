@@ -19,6 +19,7 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
 
     private WhisperFactory? _whisperFactory;
     private WhisperModel? _loadedModel;
+    private bool _loadedOnGpu;
     private bool _disposed;
 
     public WhisperTranscriberFactory(
@@ -38,7 +39,8 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var factory = await GetOrLoadModelAsync(options.Model, cancellationToken).ConfigureAwait(false);
+        var factory = await GetOrLoadModelAsync(options.Model, options.Backend, cancellationToken)
+            .ConfigureAwait(false);
 
         // Building a processor allocates a native whisper context — synchronous, and not free.
         // Off the caller's thread with everything else (ADR 0021).
@@ -65,22 +67,30 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
         return transcriber;
     }
 
-    /// <summary>Which native backend whisper.cpp actually loaded. Null until the first model load.</summary>
-    public string Backend => WhisperRuntime.Describe();
+    /// <summary>Which processor whisper.cpp actually ran on. Only meaningful once a model is loaded.</summary>
+    public string Backend => WhisperRuntime.Describe(_loadedOnGpu);
 
-    public bool IsGpu => WhisperRuntime.IsGpu;
+    public bool IsGpu => _loadedOnGpu && WhisperRuntime.GpuAvailable;
 
-    private async Task<WhisperFactory> GetOrLoadModelAsync(WhisperModel model, CancellationToken cancellationToken)
+    private async Task<WhisperFactory> GetOrLoadModelAsync(
+        WhisperModel model,
+        ComputeBackend backend,
+        CancellationToken cancellationToken)
     {
+        var useGpu = WhisperRuntime.WantsGpu(backend);
+
         await _loadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_whisperFactory is not null && _loadedModel == model)
+            // The processor is baked into the model load, so a change of backend needs a reload
+            // just as much as a change of model does.
+            if (_whisperFactory is not null && _loadedModel == model && _loadedOnGpu == useGpu)
                 return _whisperFactory;
 
             if (_whisperFactory is not null)
             {
-                _logger.LogInformation("Switching model {Old} → {New}; unloading", _loadedModel, model);
+                _logger.LogInformation("Reloading: model {Old} → {New}, gpu {WasGpu} → {UseGpu}",
+                    _loadedModel, model, _loadedOnGpu, useGpu);
                 _whisperFactory.Dispose();
                 _whisperFactory = null;
                 _loadedModel = null;
@@ -90,22 +100,38 @@ public sealed class WhisperTranscriberFactory : ITranscriberFactory, ITranscript
                 .GetModelPathAsync(model, DownloadProgress, cancellationToken)
                 .ConfigureAwait(false);
 
-            // Must happen before the first load: the backend is chosen when the native lib loads.
+            // Must happen before the first load: the native library is chosen when it loads.
             WhisperRuntime.Configure();
 
-            _logger.LogInformation("Loading whisper.cpp model from {Path}", path);
+            _logger.LogInformation("Loading whisper.cpp model from {Path} (gpu: {UseGpu})", path, useGpu);
 
             // Task.Run, because FromPath is a synchronous native call that reads 1.5–3 GB of
             // weights. Everything above it completes synchronously once the model is cached, so
             // without this the load runs on whatever thread pressed Start — the UI thread — and
             // the window freezes for a second or two (ADR 0021).
             _whisperFactory = await Task
-                .Run(() => WhisperFactory.FromPath(path), cancellationToken)
+                .Run(() => WhisperFactory.FromPath(path, new WhisperFactoryOptions { UseGpu = useGpu }),
+                    cancellationToken)
                 .ConfigureAwait(false);
 
             _loadedModel = model;
+            _loadedOnGpu = useGpu;
 
-            _logger.LogInformation("whisper.cpp running on {Backend}", WhisperRuntime.Describe());
+            // "GPU" means the user asked for one on purpose. Falling back to a CPU that takes
+            // 11 s per sentence is not a fallback, it is a different app — say so instead.
+            if (backend == ComputeBackend.Gpu && !WhisperRuntime.GpuAvailable)
+            {
+                _whisperFactory.Dispose();
+                _whisperFactory = null;
+                _loadedModel = null;
+                _loadedOnGpu = false;
+
+                throw new InvalidOperationException(
+                    "No GPU backend could be loaded on this machine. Choose Automatic or CPU under " +
+                    "More options.");
+            }
+
+            _logger.LogInformation("whisper.cpp running on {Backend}", WhisperRuntime.Describe(_loadedOnGpu));
 
             return _whisperFactory;
         }

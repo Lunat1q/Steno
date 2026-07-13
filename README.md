@@ -45,13 +45,20 @@ Your default microphone and speakers are already selected, so the short version 
 it, press **Start listening**. The first run downloads the speech model to
 `%LOCALAPPDATA%/Steno/models` (Balanced ≈ 1.5 GB, once); choose **Fast** on a weak laptop.
 
-**Latency is a GPU question.** Measured end to end on a GPU (Vulkan — NVIDIA, AMD or Intel,
-nothing to install): **~700 ms** from speaking a word to seeing it, and **~760 ms** for the
-corrected final line after you stop talking. On CPU the same model takes ~11 seconds per
-utterance, so the app says so in a banner and you should pick **Fast**. The live header always
-shows which backend is in use. Numbers and reasoning:
+**Latency is a GPU question — but not always in the GPU's favour.** Measured end to end on a
+discrete GPU (Vulkan — NVIDIA, AMD or Intel, nothing to install): **~700 ms** from speaking a word
+to seeing it, and **~760 ms** for the corrected final line after you stop talking. The same model
+on a 16-core CPU takes ~11 seconds per utterance, so the app says so in a banner and you should
+pick **Fast**. The live header always shows which backend is in use. Numbers and reasoning:
 [ADR 0010](docs/decisions/0010-sub-second-latency.md) and
 [ADR 0014](docs/decisions/0014-cold-start-and-capture-latency.md).
+
+A cheap laptop's *integrated* GPU is the exception: it shares memory with the display, and it can
+be slower than the same laptop's processor while making the screen stutter. So don't guess — under
+**What does the work**, press **Test speed**. It transcribes the same sentence on both, sets the
+faster one for you, and tells you which model that machine can actually keep up with — including
+when the answer is "none of them, record the call and transcribe it afterwards"
+([ADR 0024](docs/decisions/0024-cpu-or-gpu-is-measured-not-assumed.md)).
 
 During the call you get two level meters — **You** in sky, **Them** in amber — so a muted
 mic or misrouted call audio is obvious immediately, and a transcript in those same two
