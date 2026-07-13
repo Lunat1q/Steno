@@ -13,6 +13,14 @@ Turn it on before a call. It listens to **two streams at once**:
 Because the streams are physically separate, who-said-what is exact. No diarization
 model, no guessing (see [ADR 0002](docs/decisions/0002-per-channel-speaker-attribution.md)).
 
+## Example of how it works
+
+Live transcription of YT video: https://www.youtube.com/watch?v=8HBDE-msUjw
+
+<img width="882" height="963" alt="image" src="https://github.com/user-attachments/assets/efac9cfc-e763-4f7a-8db3-78499b2aade3" />
+
+Same applies to the Discord calls, Google Meet, MS Teams,everything can be trascribed life or just recorded to be transcribed later.
+
 ## Install it
 
 ```
