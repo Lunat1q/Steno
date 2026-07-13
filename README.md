@@ -80,3 +80,7 @@ dotnet test
 
 Max 300 lines per file. `Steno.Core` outside `Platform/` and `Whisper/` must not
 reference NAudio or Whisper.net. Every non-obvious decision gets an ADR.
+
+## Coffee?
+
+https://ko-fi.com/lunatiq
