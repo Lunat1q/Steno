@@ -216,8 +216,12 @@ public sealed class ChannelPipeline : IAsyncDisposable
 
         var isDraft = utterance.Kind == UtteranceKind.Partial;
 
+        // Loopback audio arrives at whatever the volume slider left of it. whisper is measurably
+        // worse on quiet input, so it is handed the utterance at speech level (ADR 0023).
+        var audio = TranscriptionPolicy.Normalize(utterance.Samples);
+
         var result = await _transcriber
-            .TranscribeAsync(utterance.Samples, isDraft, cancellationToken)
+            .TranscribeAsync(audio, isDraft, cancellationToken)
             .ConfigureAwait(false);
 
         if (!TranscriptionPolicy.IsUsable(result, _options.NoSpeechThreshold))
@@ -246,7 +250,7 @@ public sealed class ChannelPipeline : IAsyncDisposable
         // Second whisper pass, English only (ADR 0005). Runs after the transcript is already
         // on screen, so translation never delays what the user is reading.
         var translation = await _transcriber
-            .TranslateAsync(utterance.Samples, cancellationToken)
+            .TranslateAsync(audio, cancellationToken)
             .ConfigureAwait(false);
 
         if (!translation.IsEmpty)

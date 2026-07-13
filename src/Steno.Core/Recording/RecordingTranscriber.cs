@@ -83,14 +83,18 @@ public sealed class RecordingTranscriber : IRecordingTranscriber
 
             if (TranscriptionPolicy.IsWorthTranscribing(utterance.Samples.Span))
             {
+                // Same rule as live: whisper is handed the utterance at speech level, whatever the
+                // recording's own level happens to be (ADR 0023).
+                var audio = TranscriptionPolicy.Normalize(utterance.Samples);
+
                 var result = await transcriber
-                    .TranscribeAsync(utterance.Samples, draft: false, cancellationToken)
+                    .TranscribeAsync(audio, draft: false, cancellationToken)
                     .ConfigureAwait(false);
 
                 if (TranscriptionPolicy.IsUsable(result, transcription.NoSpeechThreshold))
                 {
                     var translation = transcription.Translation == TranslationMode.ToEnglish
-                        ? await transcriber.TranslateAsync(utterance.Samples, cancellationToken).ConfigureAwait(false)
+                        ? await transcriber.TranslateAsync(audio, cancellationToken).ConfigureAwait(false)
                         : null;
 
                     entries.Add(new TranscriptEntry(
