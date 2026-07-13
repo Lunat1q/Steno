@@ -16,7 +16,10 @@
       if it lags, a build from source thinks it is old and offers itself an update that is already
       installed.
     -->
-    <Version>1.1.1</Version>
+    <Version>1.1.3</Version>
+    <Company>TiQ Studio</Company>
+    <Product>Steno</Product>
+    <Copyright>Copyright © TiQ Studio</Copyright>
     <!-- Taskbar / Explorer / alt-tab icon, baked into the exe as a Win32 resource.
          Generated from icon.svg at the repo root; see docs/decisions/0012-app-icon.md. -->
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
