@@ -1,6 +1,6 @@
 # Steno
 
-Live, per-speaker call transcription for Windows. Primarily Russian. Fully local —
+Live, per-speaker call transcription for Windows. Fully local —
 audio never leaves the machine, transcription runs on
 [ggml-org/whisper.cpp](https://github.com/ggml-org/whisper.cpp).
 
