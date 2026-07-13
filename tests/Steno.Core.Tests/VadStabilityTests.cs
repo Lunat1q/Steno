@@ -70,6 +70,45 @@ public class VadStabilityTests(ITestOutputHelper output)
             $"the detector went deaf: {firstHalf} utterances in the first 30 s, only {secondHalf} in the second");
     }
 
+    /// <summary>
+    /// Regression: a film played through the loopback channel produced no transcript at all, while
+    /// the level meter danced. Its dialogue rides on a bed of score and effects that never stops,
+    /// so nothing was ever below the noise floor, everything was speech, and no silence ever closed
+    /// an utterance — whisper got 20 s force-cut bricks it could not keep up with.
+    ///
+    /// The pauses between sentences are still there. They are just not silent.
+    /// </summary>
+    [Fact]
+    public void Dialogue_over_a_continuous_music_bed_still_breaks_into_sentences()
+    {
+        var vad = new EnergyVoiceActivityDetector();
+        var options = new SegmentationOptions();
+        var segmenter = new UtteranceSegmenter(vad, options);
+
+        var utterances = new List<Utterance>();
+        segmenter.UtteranceReady += utterances.Add;
+
+        // A word, then a pause that is quieter but never silent — the score plays on underneath.
+        var bed = AudioSignals.Tone(TimeSpan.FromSeconds(1), amplitude: 0.05f, frequency: 80f);
+        var turn = AudioSignals.Concat(Word(TimeSpan.FromSeconds(2)), bed);
+
+        for (var i = 0; i < 10; i++) // 30 s
+        {
+            foreach (var frame in AudioSignals.ToFrames(turn))
+                segmenter.Push(frame);
+        }
+
+        var longest = utterances.Count == 0 ? TimeSpan.Zero : utterances.Max(u => u.Duration);
+        output.WriteLine($"{utterances.Count} utterances, longest {longest.TotalSeconds:F1} s, noise floor {vad.NoiseFloor:E2}");
+
+        Assert.True(utterances.Count >= 8, $"only {utterances.Count} utterances in 30 s of dialogue over music");
+
+        // The tell-tale of the bug: every utterance ran to MaxUtteranceMs because none ever closed.
+        Assert.True(
+            longest < TimeSpan.FromMilliseconds(options.MaxUtteranceMs),
+            $"utterances are being force-cut at the {options.MaxUtteranceMs} ms limit, not closed by a pause");
+    }
+
     [Fact]
     public void Loud_speech_never_raises_the_noise_floor_against_the_speaker()
     {

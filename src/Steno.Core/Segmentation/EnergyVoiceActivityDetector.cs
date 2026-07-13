@@ -7,39 +7,50 @@ namespace Steno.Core.Segmentation;
 ///
 /// RMS alone flags fan noise and line hum; ZCR alone flags fricatives and keyboard clicks.
 /// Speech = energy well above the tracked noise floor AND a ZCR in the vocal band.
-/// The floor adapts only while the frame is judged non-speech, so a long monologue
-/// cannot drag the floor up and mute the speaker.
 ///
-/// ponytail: no model. Adequate on a headset. Swap in Silero behind IVoiceActivityDetector
-/// if the room is noisy — see ADR 0003.
+/// The floor is the 10th percentile of the last few seconds of audio: whatever the channel is
+/// doing when nobody is talking. A percentile is used rather than an EMA that only learns from
+/// frames the detector already judged quiet, because that scheme cannot see a background it never
+/// gets below. Over film audio — dialogue on a bed of score and effects — every single frame was
+/// "loud", so the floor stayed pinned at its minimum, every frame was speech, no silence ever
+/// closed an utterance, and the transcript was force-cut 20 s bricks (ADR 0015).
+///
+/// ponytail: no model. Adequate on a headset, adequate on a film mix. Swap in Silero behind
+/// IVoiceActivityDetector if music-heavy input needs to be tighter — see ADR 0003.
 /// </summary>
 public sealed class EnergyVoiceActivityDetector : IVoiceActivityDetector
 {
     private const float InitialNoiseFloor = 1e-4f;
 
-    /// <summary>Rise toward a louder room. Deliberately slow: a fast rise is how the detector
-    /// talks itself into silence.</summary>
-    private const float FloorRise = 0.003f;
+    /// <summary>How much history the floor is drawn from. Long enough to span the pauses between
+    /// sentences — the quiet part of the window is the whole point — short enough to follow a
+    /// scene change.</summary>
+    private const int FloorWindowFrames = 150; // 3 s of 20 ms frames
 
-    /// <summary>Fall toward a quieter room. Faster than the rise — being too sensitive is
-    /// recoverable, being deaf is not.</summary>
-    private const float FloorFall = 0.05f;
+    /// <summary>Where in that window the background lives. Speech occupies the top of the window;
+    /// the bottom tenth is the room, the hiss, or the score under the dialogue.</summary>
+    private const float FloorPercentile = 0.10f;
 
     /// <summary>
-    /// Hard ceiling on the learned floor. Speech RMS sits around 0.1–0.3, so with the 4× SNR
-    /// factor this keeps the speech threshold at most 0.08 — below any normal voice. Even if
-    /// every heuristic above it is wrong, the detector cannot become permanently deaf.
+    /// Hard ceiling on the learned floor. With the 3× SNR factor this keeps the speech threshold
+    /// at most 0.045 — below even a quiet talker (~0.05). Even if every heuristic above it is
+    /// wrong, the detector cannot become permanently deaf.
     /// </summary>
-    private const float MaxNoiseFloor = 0.02f;
+    private const float MaxNoiseFloor = 0.015f;
 
-    /// <summary>Speech must exceed the noise floor by this factor (~12 dB).</summary>
-    private const float SnrFactor = 4.0f;
+    /// <summary>Speech must exceed the noise floor by this factor (~10 dB). Lower than a headset
+    /// would need: dialogue mixed over music does not get 12 dB of headroom.</summary>
+    private const float SnrFactor = 3.0f;
 
     /// <summary>Absolute floor. Below this it is digital silence regardless of the adaptive floor.</summary>
     private const float AbsoluteFloor = 3e-4f;
 
     private const float MinZeroCrossingRate = 0.005f;
     private const float MaxZeroCrossingRate = 0.30f;
+
+    private readonly float[] _recent = new float[FloorWindowFrames];
+    private int _recentCount;
+    private int _next;
 
     private float _noiseFloor = InitialNoiseFloor;
 
@@ -52,28 +63,36 @@ public sealed class EnergyVoiceActivityDetector : IVoiceActivityDetector
 
         var rms = Rms(frame);
 
-        // "Loud" is about energy alone. Speech also has to sound like a voice, but that second
-        // test must NOT feed back into the noise floor — see below.
+        _recent[_next] = rms;
+        _next = (_next + 1) % FloorWindowFrames;
+        _recentCount = Math.Min(_recentCount + 1, FloorWindowFrames);
+        _noiseFloor = EstimateNoiseFloor();
+
+        // "Loud" is about energy alone; speech also has to sound like a voice. The ZCR veto never
+        // feeds back into the floor — a fricative ("s", "sh") is as loud as a vowel but fails it,
+        // and a floor that learned from those frames would climb to speech level and go deaf.
         var loud = rms > AbsoluteFloor && rms > _noiseFloor * SnrFactor;
-        var speech = loud && IsVocalZeroCrossingRate(frame);
 
-        // The floor learns the *room*, so it may only learn from frames that are quiet relative
-        // to it. Learning from loud frames is a death spiral: a fricative ("s", "sh") is as loud
-        // as a vowel but fails the zero-crossing test, so it used to count as "not speech" and
-        // drag the floor up toward speech level. A few seconds of talking then put the threshold
-        // above the speaker's own voice and the detector went permanently deaf — meters moving,
-        // no text, forever.
-        if (!loud)
-        {
-            var rate = rms > _noiseFloor ? FloorRise : FloorFall;
-            _noiseFloor += (rms - _noiseFloor) * rate;
-            _noiseFloor = Math.Clamp(_noiseFloor, 1e-6f, MaxNoiseFloor);
-        }
-
-        return speech;
+        return loud && IsVocalZeroCrossingRate(frame);
     }
 
-    public void Reset() => _noiseFloor = InitialNoiseFloor;
+    public void Reset()
+    {
+        _noiseFloor = InitialNoiseFloor;
+        _recentCount = 0;
+        _next = 0;
+    }
+
+    private float EstimateNoiseFloor()
+    {
+        Span<float> window = stackalloc float[FloorWindowFrames];
+        _recent.AsSpan(0, _recentCount).CopyTo(window);
+        window = window[.._recentCount];
+        window.Sort();
+
+        var floor = window[(int)(window.Length * FloorPercentile)];
+        return Math.Clamp(floor, 1e-6f, MaxNoiseFloor);
+    }
 
     public static float Rms(ReadOnlySpan<float> frame)
     {
