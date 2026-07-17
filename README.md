@@ -21,15 +21,33 @@ Live transcription of YT video: https://www.youtube.com/watch?v=8HBDE-msUjw
 
 Same applies to the Discord calls, Google Meet, MS Teams,everything can be trascribed life or just recorded to be transcribed later.
 
+## Also: dictation
+
+**Steno Dictate** is a second, much smaller app that installs alongside: speak, and the words are
+typed into whatever app you click into — an email, a chat, a code comment. Same engine, same
+models, no per-app integration. It has three dropdowns (microphone, model, language) and a Start
+button.
+
+Words appear *as you speak them* and are corrected in place when the model changes its mind, the
+way Windows Voice Typing does — it backspaces only the letters that actually changed, so you don't
+wait for the end of a sentence to see anything ([ADR 0025](docs/decisions/0025-dictate-mode.md)).
+
+```
+dotnet run --project src/Steno.Dictate
+```
+
 ## Install it
 
 ```
-installer/build.ps1        # -> artifacts/Steno-Setup.msi  (53 MB)
+installer/build.ps1        # -> artifacts/Steno-Setup.msi  (55 MB, both apps)
 ```
 
-Per-user install, no admin, no .NET needed on the target machine. A true single exe is not
-possible — whisper.cpp's native libraries have to sit in a `runtimes/` folder the loader can
-find ([ADR 0017](docs/decisions/0017-packaging.md)).
+Per-user install, no admin, no .NET needed on the target machine. One folder, two exes: Steno and
+Steno Dictate are two front ends over one engine, so they share a single set of libraries rather
+than carrying a copy each — the second app costs 2 MB of download
+([ADR 0025](docs/decisions/0025-dictate-mode.md)). A true single exe is not possible — whisper.cpp's
+native libraries have to sit in a `runtimes/` folder the loader can find
+([ADR 0017](docs/decisions/0017-packaging.md)).
 
 Steno checks GitHub Releases for updates on launch, offers them (never during a call), and
 installs on your say-so — verifying the published SHA-256 before it runs anything
@@ -77,6 +95,7 @@ language whisper can translate into ([ADR 0005](docs/decisions/0005-translation.
 | [docs/decisions/](docs/decisions/) | why it is built this way |
 | [src/Steno.Core/](src/Steno.Core/) | audio capture, VAD segmentation, whisper.cpp, session |
 | [src/Steno.App/](src/Steno.App/) | Avalonia UI |
+| [src/Steno.Dictate/](src/Steno.Dictate/) | the dictation app — three dropdowns over the same engine |
 | [tests/](tests/) | segmenter and echo-gate tests |
 
 ```

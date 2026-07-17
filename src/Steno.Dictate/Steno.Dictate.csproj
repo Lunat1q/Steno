@@ -9,19 +9,14 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <RootNamespace>Steno.App</RootNamespace>
-    <!--
-      The current version, shown in the app's header and compared against GitHub Releases by the
-      updater. installer/release.ps1 overrides it with -p:Version, but this must be kept in step:
-      if it lags, a build from source thinks it is old and offers itself an update that is already
-      installed.
-    -->
+    <RootNamespace>Steno.Dictate</RootNamespace>
+    <!-- Ships in the same MSI as Steno, so it carries the same version. -->
     <Version>1.2.0</Version>
     <Company>TiQ Studio</Company>
-    <Product>Steno</Product>
+    <Product>Steno Dictate</Product>
     <Copyright>Copyright © TiQ Studio</Copyright>
     <!-- Taskbar / Explorer / alt-tab icon, baked into the exe as a Win32 resource.
-         Generated from icon.svg at the repo root; see docs/decisions/0012-app-icon.md. -->
+         Rendered from an SVG that is not kept in the tree; see docs/decisions/0012-app-icon.md. -->
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -43,10 +38,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Steno.Core\Steno.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <InternalsVisibleTo Include="Steno.App.Tests" />
   </ItemGroup>
 
 </Project>

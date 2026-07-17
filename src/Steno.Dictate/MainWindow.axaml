@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Steno.Dictate"
+        x:Class="Steno.Dictate.MainWindow"
+        x:DataType="vm:DictateViewModel"
+        Title="Steno Dictate"
+        Icon="/Assets/icon.ico"
+        Width="420" SizeToContent="Height"
+        MinWidth="360"
+        CanResize="False"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen">
+
+    <StackPanel Margin="20" Spacing="14">
+
+        <StackPanel Spacing="2">
+            <TextBlock Text="Steno Dictate" FontSize="18" FontWeight="Bold" />
+            <TextBlock Text="Speak, and it types into whatever app you click into." Opacity="0.7"
+                       FontSize="12" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock Text="Microphone" FontSize="12" Opacity="0.8" />
+            <ComboBox ItemsSource="{Binding Microphones}" SelectedItem="{Binding Microphone}"
+                      HorizontalAlignment="Stretch" IsEnabled="{Binding IsIdle}" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,12,*">
+            <StackPanel Grid.Column="0" Spacing="4">
+                <TextBlock Text="Model" FontSize="12" Opacity="0.8" />
+                <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding Model}"
+                          HorizontalAlignment="Stretch" IsEnabled="{Binding IsIdle}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="4">
+                <TextBlock Text="Language" FontSize="12" Opacity="0.8" />
+                <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding Language}"
+                          HorizontalAlignment="Stretch" IsEnabled="{Binding IsIdle}" />
+            </StackPanel>
+        </Grid>
+
+        <Button Content="{Binding ButtonText}" Command="{Binding ToggleCommand}"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                Classes="accent" FontWeight="SemiBold" Padding="0,10" />
+
+        <TextBlock Text="{Binding Status}" FontSize="12" Opacity="0.8" TextWrapping="Wrap" />
+    </StackPanel>
+</Window>

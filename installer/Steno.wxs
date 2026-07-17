@@ -23,6 +23,7 @@
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
 
     <Icon Id="StenoIcon" SourceFile="$(var.IconFile)" />
+    <Icon Id="DictateIcon" SourceFile="$(var.DictateIconFile)" />
     <Property Id="ARPPRODUCTICON" Value="StenoIcon" />
     <Property Id="ARPURLINFOABOUT" Value="https://github.com/Lunat1q/Steno" />
 
@@ -40,12 +41,14 @@
     <Feature Id="Main" Title="Steno" Level="1">
       <ComponentGroupRef Id="AppFiles" />
       <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DictateShortcut" />
     </Feature>
 
     <!--
-      Harvests the publish folder as-is. The runtimes/ subfolders are NOT optional: Whisper.net
-      locates whisper.cpp's native libraries by directory, so flattening this layout breaks
-      transcription at the moment the user presses Start. ADR 0017.
+      Harvests the publish folder as-is. Both apps publish into it, so this ships Steno.App.exe and
+      Steno.Dictate.exe over one shared set of libraries (ADR 0025). The runtimes/ subfolders are
+      NOT optional: Whisper.net locates whisper.cpp's native libraries by directory, so flattening
+      this layout breaks transcription at the moment the user presses Start. ADR 0017.
     -->
     <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
       <Files Include="$(var.PublishDir)\**" />
@@ -60,6 +63,17 @@
                 Icon="StenoIcon" />
       <RemoveFolder Id="RemoveShortcutFolder" Directory="ShortcutFolder" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\TiQ Studio\Steno" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- The second front end over the same engine: dictation into any app (ADR 0025). -->
+    <Component Id="DictateShortcut" Directory="ShortcutFolder" Guid="b7d4e3f1-6a29-4c8d-9e51-2f0a8c3b7d16">
+      <Shortcut Id="StenoDictateShortcut"
+                Name="Steno Dictate"
+                Description="Speak, and it types into whatever app you click into"
+                Target="[INSTALLFOLDER]Steno.Dictate.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="DictateIcon" />
+      <RegistryValue Root="HKCU" Key="Software\TiQ Studio\Steno" Name="dictate" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
   </Package>
